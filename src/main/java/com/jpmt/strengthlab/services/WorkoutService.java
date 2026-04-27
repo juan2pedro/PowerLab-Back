@@ -20,12 +20,14 @@ public interface WorkoutService {
 
     WorkoutSessionDetailResponse createWorkoutFromTemplate(Long templeteId, WorkoutSessionRequest session);
 
-    List<WorkoutSessionSummaryResponse> findAllWorkoutSessionsByRangeDate(LocalDate from, LocalDate to);
+    List<WorkoutSessionSummaryResponse> findAllWorkoutSessionsByDateRange(LocalDate from,LocalDate to);
 
     WorkoutSessionDetailResponse findWorkoutById(Long id);
 
     void deleteWorkoutById(Long id);
-   WorkoutDayResponse findFullDayById(Long id);
+    WorkoutDayResponse findFullDayById(Long id);
+
+    WorkoutDayResponse findFullDayByDate(LocalDate date);
 
     // workoutEntries
     WorkoutEntryResponse saveWorkoutEntry(WorkoutEntryCreateRequest entry);

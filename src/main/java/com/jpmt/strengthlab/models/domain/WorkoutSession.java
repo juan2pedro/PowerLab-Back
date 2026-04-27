@@ -1,6 +1,7 @@
 package com.jpmt.strengthlab.models.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
@@ -32,6 +33,7 @@ public class WorkoutSession {
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("id ASC")
     @Builder.Default
+    @NotEmpty
     private List<WorkoutEntry> entries = new ArrayList<>();
 
 }

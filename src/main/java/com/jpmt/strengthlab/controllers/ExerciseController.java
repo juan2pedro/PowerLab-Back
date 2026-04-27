@@ -21,8 +21,8 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/exercise")
-@Tag(name = "Exercise", description = "APIs para gestionar ejercicios")
+@RequestMapping("/api/exercises")
+@Tag(name = "Exercises", description = "APIs para gestionar ejercicios")
 public class ExerciseController {
 
     private final ExerciseService service;

@@ -24,8 +24,8 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/training-session")
-@Tag(name = "Training Session", description = "APIs para gestionar plantillas de sesiones de entrenamiento")
+@RequestMapping("/api/training-sessions")
+@Tag(name = "Training Sessions", description = "APIs para gestionar programaciones de sesiones de entrenamiento")
 public class TrainingSessionController {
 
     private final TrainingSessionService service;
@@ -34,39 +34,43 @@ public class TrainingSessionController {
         this.service = service;
     }
 
-    // --- Training Session Templates ---
+    // ============================================================================
+    // TRAINING SESSION TEMPLATES - programaciones de sesiones de entrenamiento
+    // ============================================================================
+
     @GetMapping
-    @Operation(summary = "List training session templates", description = "Devuelve un resumen de todas las plantillas de sesiones")
+    @Operation(summary = "List training session templates", description = "Devuelve un resumen de todas las programaciones de sesiones")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Operación exitosa",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = TrainingSessionTemplateSummaryResponse.class)))
     })
-
     public ResponseEntity<List<TrainingSessionTemplateSummaryResponse>> findAllSession() {
         List<TrainingSessionTemplateSummaryResponse> result = service.findAllSession();
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("/search")
-    // <editor-fold desc="OpenAPI annotations">
-    @Operation(summary = "Search session templates by block and week")
+    @Operation(summary = "Search session templates by block and week",
+            description = "Busca programaciones de sesiones por nombre de bloque y número de semana")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Operación exitosa",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = TrainingSessionTemplateSummaryResponse.class)))
+                            schema = @Schema(implementation = TrainingSessionTemplateSummaryResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Parámetros de búsqueda inválidos",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ApiErrorResponse.class)))
     })
-    // </editor-fold>
     public ResponseEntity<List<TrainingSessionTemplateSummaryResponse>> findAllSessionByBlockNameAndWeekNumber(
-            @Parameter(description = "Nombre del bloque") @RequestParam String blockName,
-            @Parameter(description = "Número de semana") @RequestParam Integer weekNumber) {
+            @Parameter(description = "Nombre del bloque de entrenamiento", required = true) @RequestParam String blockName,
+            @Parameter(description = "Número de semana (1-12)", required = true) @RequestParam Integer weekNumber) {
         List<TrainingSessionTemplateSummaryResponse> result = service.findAllSessionByBlockNameAndWeekNumber(blockName, weekNumber);
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{id}")
-    // <editor-fold desc="OpenAPI annotations">
-    @Operation(summary = "Get session template detail by ID")
+    @Operation(summary = "Get session template detail by ID",
+            description = "Obtiene el detalle completo de una plantilla de sesión incluyendo sus sets")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Plantilla encontrada",
                     content = @Content(mediaType = "application/json",
@@ -75,7 +79,6 @@ public class TrainingSessionController {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ApiErrorResponse.class)))
     })
-    // </editor-fold>
     public ResponseEntity<TrainingSessionTemplateDetailResponse> findSesionById(
             @Parameter(description = "ID de la plantilla de sesión") @PathVariable Long id) {
         TrainingSessionTemplateDetailResponse result = service.findSessionById(id);
@@ -83,23 +86,22 @@ public class TrainingSessionController {
     }
 
     @PostMapping
-    // <editor-fold desc="OpenAPI annotations">
     @Operation(summary = "Create session template",
+            description = "Crea una nueva plantilla de sesión de entrenamiento",
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Payload de la plantilla",
+                    description = "Datos de la plantilla a crear",
                     required = true,
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = TrainingSessionTemplateRequest.class))
             ))
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Plantilla creada",
+            @ApiResponse(responseCode = "201", description = "Plantilla creada exitosamente",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = TrainingSessionTemplateDetailResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Entrada inválida",
+            @ApiResponse(responseCode = "400", description = "Datos inválidos",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ApiErrorResponse.class)))
     })
-    // </editor-fold>
     public ResponseEntity<TrainingSessionTemplateDetailResponse> saveSession(
             @Valid @RequestBody TrainingSessionTemplateRequest session) {
         TrainingSessionTemplateDetailResponse savedSession = service.saveSession(session);
@@ -111,26 +113,25 @@ public class TrainingSessionController {
     }
 
     @PutMapping("/{id}")
-    // <editor-fold desc="OpenAPI annotations">
     @Operation(summary = "Update session template",
+            description = "Actualiza una plantilla de sesión existente",
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Payload de la plantilla",
+                    description = "Datos actualizados de la plantilla",
                     required = true,
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = TrainingSessionTemplateRequest.class))
             ))
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Plantilla actualizada",
+            @ApiResponse(responseCode = "200", description = "Plantilla actualizada exitosamente",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = TrainingSessionTemplateDetailResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Plantilla no encontrada",
+            @ApiResponse(responseCode = "400", description = "Datos inválidos",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ApiErrorResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Entrada inválida",
+            @ApiResponse(responseCode = "404", description = "Plantilla no encontrada",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ApiErrorResponse.class)))
     })
-    // </editor-fold>
     public ResponseEntity<TrainingSessionTemplateDetailResponse> updateSession(
             @Parameter(description = "ID de la plantilla") @PathVariable Long id,
             @Valid @RequestBody TrainingSessionTemplateRequest session) {
@@ -139,98 +140,109 @@ public class TrainingSessionController {
     }
 
     @DeleteMapping("/{id}")
-    // <editor-fold desc="OpenAPI annotations">
-    @Operation(summary = "Delete session template")
+    @Operation(summary = "Delete session template",
+            description = "Elimina una plantilla de sesión y todos sus sets asociados")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Plantilla eliminada", content = @Content),
+            @ApiResponse(responseCode = "204", description = "Plantilla eliminada exitosamente", content = @Content),
             @ApiResponse(responseCode = "404", description = "Plantilla no encontrada",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ApiErrorResponse.class)))
     })
-    // </editor-fold>
     public ResponseEntity<Void> deleteSessionById(
             @Parameter(description = "ID de la plantilla") @PathVariable Long id) {
         service.deleteSessionById(id);
         return ResponseEntity.noContent().build();
     }
 
-    // --- Training Set Templates ---
-    @GetMapping("/{sessionId}/sets/{setId}")
-    // <editor-fold desc="OpenAPI annotations">
-    @Operation(summary = "Get set template by ID")
+    // ============================================================================
+    // TRAINING SET TEMPLATES - programaciones de sets dentro de sesiones
+    // ============================================================================
+
+    @GetMapping("/{sessionId}/sets")
+    @Operation(summary = "List set templates for a session",
+            description = "Obtiene todos los sets de una plantilla de sesión ordenados por displayOrder")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Plantilla de set encontrada",
+            @ApiResponse(responseCode = "200", description = "Lista de sets obtenida exitosamente",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = TrainingSetTemplateResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Plantilla de set no encontrada",
+            @ApiResponse(responseCode = "404", description = "Sesión no encontrada",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ApiErrorResponse.class)))
     })
-    // </editor-fold>
-    public ResponseEntity<TrainingSetTemplateResponse> findSetById(
-            @Parameter(description = "ID de la sesión (contexto)") @PathVariable Long sessionId,
-            @Parameter(description = "ID de la plantilla de set") @PathVariable Long setId) {
-        return ResponseEntity.ok(this.service.findSetById(setId));
-    }
-
-    @GetMapping("/{sessionId}/sets")
-    // <editor-fold desc="OpenAPI annotations">
-    @Operation(summary = "List set templates for a session")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Operación exitosa",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = TrainingSetTemplateResponse.class)))
-    })
-    // </editor-fold>
     public ResponseEntity<List<TrainingSetTemplateResponse>> findResumeSetById(
             @Parameter(description = "ID de la plantilla de sesión") @PathVariable Long sessionId) {
         List<TrainingSetTemplateResponse> response = service.findBySessionIdWithExercise(sessionId);
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/{sessionId}/sets/{setId}")
+    @Operation(summary = "Get set template by ID",
+            description = "Obtiene los detalles de un set de una plantilla de sesión")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Set encontrado",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = TrainingSetTemplateResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Set o sesión no encontrada",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public ResponseEntity<TrainingSetTemplateResponse> findSetById(
+            @Parameter(description = "ID de la sesión (contexto)") @PathVariable Long sessionId,
+            @Parameter(description = "ID de la plantilla de set") @PathVariable Long setId) {
+        return ResponseEntity.ok(this.service.findSetById(setId));
+    }
+
     @PostMapping("/{sessionId}/sets")
-    // <editor-fold desc="OpenAPI annotations">
     @Operation(summary = "Add set template to session",
+            description = "Añade un nuevo set a una plantilla de sesión existente",
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Payload del set",
+                    description = "Datos del set a crear",
                     required = true,
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = TrainingSetTemplateRequest.class))
             ))
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Plantilla de set creada",
+            @ApiResponse(responseCode = "201", description = "Set creado exitosamente",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = TrainingSetTemplateResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Plantilla de sesión no encontrada",
+            @ApiResponse(responseCode = "400", description = "Datos inválidos",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Sesión no encontrada",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ApiErrorResponse.class)))
     })
-    // </editor-fold>
     public ResponseEntity<TrainingSetTemplateResponse> saveSet(
             @Parameter(description = "ID de la plantilla de sesión") @PathVariable Long sessionId,
             @Valid @RequestBody TrainingSetTemplateRequest set) {
         TrainingSetTemplateResponse savedSet = this.service.saveSet(sessionId, set);
-        return ResponseEntity.status(201).body(savedSet);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(savedSet.id())
+                .toUri();
+        return ResponseEntity.created(location).body(savedSet);
     }
 
     @PutMapping("/{sessionId}/sets/{setId}")
-    // <editor-fold desc="OpenAPI annotations">
     @Operation(summary = "Update set template",
+            description = "Actualiza un set de una plantilla de sesión",
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Payload del set",
+                    description = "Datos actualizados del set",
                     required = true,
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = TrainingSetTemplateUpdateRequest.class))
             ))
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Plantilla de set actualizada",
+            @ApiResponse(responseCode = "200", description = "Set actualizado exitosamente",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = TrainingSetTemplateResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Plantilla de set no encontrada",
+            @ApiResponse(responseCode = "400", description = "Datos inválidos",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Set o sesión no encontrada",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ApiErrorResponse.class)))
     })
-    // </editor-fold>
     public ResponseEntity<TrainingSetTemplateResponse> updateSet(
             @Parameter(description = "ID de la sesión (contexto)") @PathVariable Long sessionId,
             @Parameter(description = "ID de la plantilla de set") @PathVariable Long setId,
@@ -239,15 +251,14 @@ public class TrainingSessionController {
     }
 
     @DeleteMapping("/{sessionId}/sets/{setId}")
-    // <editor-fold desc="OpenAPI annotations">
-    @Operation(summary = "Delete set template")
+    @Operation(summary = "Delete set template",
+            description = "Elimina un set de una plantilla de sesión")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Plantilla de set eliminada", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Plantilla de set no encontrada",
+            @ApiResponse(responseCode = "204", description = "Set eliminado exitosamente", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Set o sesión no encontrada",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ApiErrorResponse.class)))
     })
-    // </editor-fold>
     public ResponseEntity<Void> deleteSetById(
             @Parameter(description = "ID de la sesión (contexto)") @PathVariable Long sessionId,
             @Parameter(description = "ID de la plantilla de set") @PathVariable Long setId) {

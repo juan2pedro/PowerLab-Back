@@ -83,43 +83,30 @@ public class WorkoutServiceImpl implements WorkoutService {
     }
 
     @Override
+    public List<WorkoutSessionSummaryResponse> findAllWorkoutSessionsByDateRange(LocalDate from, LocalDate to) {
+      List  <WorkoutSession> session = sessionRepository.findFullByDateRange(from, to);
+        return session.stream()
+                .map(workoutSessionMapper::toSummaryResponse)
+                .toList();
+    }
+
+    @Override
     @Transactional(readOnly = true)
-    public List<WorkoutSessionSummaryResponse> findAllWorkoutSessionsByRangeDate(LocalDate from, LocalDate to) {
-        List<WorkoutSession> result = sessionRepository.findByDateBetweenOrderByDateDesc(from, to);
-        return result.stream().map(workoutSessionMapper::toSummaryResponse).toList();
+    public WorkoutDayResponse findFullDayByDate(LocalDate date) {
+          WorkoutSession session = sessionRepository.findFullByDate(date).orElseThrow(() -> new ResourceNotFoundException("WorkoutSession", "date", date));
+        Long templateId = session.getTrainingSessionTemplate() != null ? session.getTrainingSessionTemplate().getId() : null;
+
+        return this.loadFullDay(session,templateId);
+
     }
 
     @Override
     @Transactional(readOnly = true)
     public WorkoutDayResponse findFullDayById(Long id) {
         WorkoutSession session = sessionRepository.findHeaderById(id).orElseThrow(() -> new ResourceNotFoundException("WorkoutSession", "id", id));
-
         Long templateId = session.getTrainingSessionTemplate() != null ? session.getTrainingSessionTemplate().getId() : null;
-        if (templateId != null) {
-            TrainingSessionTemplate fullTemplate = templateRepository.findById(templateId)
-                    .orElseThrow(() -> new ResourceNotFoundException("TrainingSessionTemplate", "id", templateId));
-            session.setTrainingSessionTemplate(fullTemplate);
-        }
 
-        if(session.getEntries()==null || session.getEntries().isEmpty()){
-            return workoutSessionMapper.toDayResponse(session);
-        }
-        List<Long> entryIds = session.getEntries().stream().map(WorkoutEntry::getId).toList();
-        List<WorkoutSet> allSets = workoutSetRepository.findByWorkoutEntryIdIn(entryIds);
-
-        Map<Long, List<WorkoutSet>> setsByEntryId = allSets.stream()
-                .collect(Collectors.groupingBy(s -> s.getWorkoutEntry().getId()));
-
-        for (WorkoutEntry entry : session.getEntries()) {
-            LinkedHashSet<WorkoutSet> orderedSets = setsByEntryId
-                    .getOrDefault(entry.getId(), List.of()).stream()
-                    .sorted(Comparator.comparingInt(s -> s.getSequenceNumber() == null ? 0 : s.getSequenceNumber()))
-                    .collect(Collectors.toCollection(LinkedHashSet::new));
-
-            entry.setSets(orderedSets);
-        }
-
-        return workoutSessionMapper.toDayResponse(session);
+        return loadFullDay(session,templateId);
     }
 
     @Override
@@ -214,5 +201,33 @@ public class WorkoutServiceImpl implements WorkoutService {
             throw new ResourceNotFoundException("WorkoutSet", "id", id);
         }
         workoutSetRepository.deleteById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public WorkoutDayResponse loadFullDay(WorkoutSession workoutSession, Long templateId) {
+        if (templateId != null) {
+            TrainingSessionTemplate fullTemplate = templateRepository.findById(templateId)
+                    .orElseThrow(() -> new ResourceNotFoundException("TrainingSessionTemplate", "id", templateId));
+            workoutSession.setTrainingSessionTemplate(fullTemplate);
+        }
+
+        if( workoutSession.getEntries().isEmpty()){
+            return workoutSessionMapper.toDayResponse(workoutSession);
+        }
+        List<Long> entryIds = workoutSession.getEntries().stream().map(WorkoutEntry::getId).toList();
+        List<WorkoutSet> allSets = workoutSetRepository.findByWorkoutEntryIdIn(entryIds);
+
+        Map<Long, List<WorkoutSet>> setsByEntryId = allSets.stream()
+                .collect(Collectors.groupingBy(s -> s.getWorkoutEntry().getId()));
+
+        for (WorkoutEntry entry : workoutSession.getEntries()) {
+            LinkedHashSet<WorkoutSet> orderedSets = setsByEntryId
+                    .getOrDefault(entry.getId(), List.of()).stream()
+                    .sorted(Comparator.comparingInt(s -> s.getSequenceNumber() == null ? 0 : s.getSequenceNumber()))
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+
+            entry.setSets(orderedSets);
+        }
+        return workoutSessionMapper.toDayResponse(workoutSession);
     }
 }

@@ -15,7 +15,7 @@ public interface WorkoutSetMapper {
     WorkoutSetResponse toResponse(WorkoutSet entity);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "workoutEntry", ignore = true) // se setea en service
+    @Mapping(target = "workoutEntry", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(source = "sequenceNumber", target = "sequenceNumber")

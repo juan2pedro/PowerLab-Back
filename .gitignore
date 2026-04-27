@@ -5,6 +5,9 @@ target/
 !**/src/test/**/target/
 /docs/
 src/main/resources/local.env
+CLAUDE.md
+.github
+.github/copilot-instructions.md
 
 ### STS ###
 .apt_generated
