@@ -64,7 +64,7 @@ class WorkoutServiceTest {
     }
 
     @Test
-    void saveWorkoutSessionWitTemplate() {
+    void saveWorkoutSessionWithTemplate() {
         WorkoutSessionRequest sessionRequest = new WorkoutSessionRequest(LocalDate.now(), 1L);
         WorkoutSession workoutSession = WorkoutSession.builder()
                 .id(1L)
@@ -119,9 +119,9 @@ class WorkoutServiceTest {
     }
 
     @Test
-    void findAllWorkoutSessionsByRangeDate() {
-        LocalDate from = LocalDate.now();
-        LocalDate to = LocalDate.now().minusDays(30);
+    void findAllWorkoutSessionsByDateRange() {
+        LocalDate from = LocalDate.now().minusDays(30);
+        LocalDate to = LocalDate.now();
 
         List<WorkoutSession> sessions = List.of(
                 WorkoutSession.builder().id(1L).date(LocalDate.now()).build(),
@@ -130,17 +130,17 @@ class WorkoutServiceTest {
         when(workoutSessionMapper.toSummaryResponse(sessions.get(0)))
                 .thenReturn(new WorkoutSessionSummaryResponse(1L, LocalDate.now(), 1L, java.util.Collections.emptyList()));
         when(workoutSessionMapper.toSummaryResponse(sessions.get(1)))
-                .thenReturn(new WorkoutSessionSummaryResponse(2L, LocalDate.now().minusDays(30), 1L, java.util.Collections.emptyList()));
+                .thenReturn(new WorkoutSessionSummaryResponse(2L, LocalDate.now().minusDays(10), 1L, java.util.Collections.emptyList()));
 
-        when(workoutSessionRepository.findByDateBetweenOrderByDateDesc(from, to)).thenReturn(sessions);
-        List<WorkoutSessionSummaryResponse> result = workoutService.findAllWorkoutSessionsByRangeDate(from, to);
+        when(workoutSessionRepository.findFullByDateRange(from, to)).thenReturn(sessions);
+        List<WorkoutSessionSummaryResponse> result = workoutService.findAllWorkoutSessionsByDateRange(from, to);
 
         assertEquals(2, result.size());
         assertEquals(LocalDate.now(), result.getFirst().date());
     }
 
     @Test
-    void FindFullDayByIdWithOutEntries() {
+    void findFullDayByIdWithoutEntries() {
         List<TrainingSetTemplate> setTemplate = Collections.singletonList(TrainingSetTemplate.builder().id(1L).targetSets(5).targetReps(12).targetWeight(100.0).targetIntensity(80).targetIntensityType(IntensityType.PERCENTAGE).rest("2 min").notes("set notes").displayOrder(1).build());
         TrainingSessionTemplate template = TrainingSessionTemplate.builder().id(1L).blockName("block name").weekNumber(1).dayInWeek(1).conjugatedDayType(ConjugatedDayType.ME_LOWER).notes("notess").setTemplates(setTemplate).build();
         List<WorkoutEntry> entries = Collections.emptyList();
@@ -175,7 +175,7 @@ class WorkoutServiceTest {
     }
 
     @Test
-    void FindFullDayById() {
+    void findFullDayById() {
         List<TrainingSetTemplate> setTemplate = Collections.singletonList( TrainingSetTemplate.builder().id(1L).targetSets(5).targetReps(12).targetWeight(100.0).targetIntensity(80).targetIntensityType(IntensityType.PERCENTAGE).rest("2 min").notes("set notes").displayOrder(1).build());
         TrainingSessionTemplate template =  TrainingSessionTemplate.builder().id(1L).blockName("block name").weekNumber(1).dayInWeek(1).conjugatedDayType(ConjugatedDayType.ME_LOWER).notes("notess").setTemplates(setTemplate).build();
         List<WorkoutEntry> entries = Collections.singletonList( WorkoutEntry.builder().id(1L).actualSets(5).actualReps(12).actualPlateWeight(100.0).actualRirOrRpe("80").isWarmup(true).notes("entry notes").build());
@@ -217,7 +217,7 @@ class WorkoutServiceTest {
     }
 
     @Test
-    void FindFullDayByIdNullException() {
+    void findFullDayByIdThrowsWhenTemplateMissing() {
         List<TrainingSetTemplate> setTemplate = Collections.singletonList( TrainingSetTemplate.builder().id(1L).targetSets(5).targetReps(12).targetWeight(100.0).targetIntensity(80).targetIntensityType(IntensityType.PERCENTAGE).rest("2 min").notes("set notes").displayOrder(1).build());
         TrainingSessionTemplate template = TrainingSessionTemplate.builder().id(1L).blockName("block name").weekNumber(1).dayInWeek(1).conjugatedDayType(ConjugatedDayType.ME_LOWER).notes("notess").setTemplates(setTemplate).build();
         List<WorkoutEntry> entries = Collections.emptyList();

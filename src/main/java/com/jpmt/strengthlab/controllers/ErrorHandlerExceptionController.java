@@ -3,6 +3,8 @@ package com.jpmt.strengthlab.controllers;
 import com.jpmt.strengthlab.exceptions.ResourceNotFoundException;
 import com.jpmt.strengthlab.models.dto.ApiErrorResponse;
 import jakarta.validation.ConstraintViolationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +19,8 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class ErrorHandlerExceptionController {
+
+    private static final Logger logger = LoggerFactory.getLogger(ErrorHandlerExceptionController.class);
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
@@ -63,10 +67,11 @@ public class ErrorHandlerExceptionController {
     }
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
-       ApiErrorResponse apiError = new ApiErrorResponse(
-               null, ex.getMessage(), "Data Integrity Violation", HttpStatus.CONFLICT.value(), new Date()
-       );
-       return ResponseEntity.status(HttpStatus.CONFLICT).body(apiError);
+        logger.warn("Data integrity violation", ex);
+        ApiErrorResponse apiError = new ApiErrorResponse(
+                null, "Conflict with existing data", "Data Integrity Violation", HttpStatus.CONFLICT.value(), new Date()
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(apiError);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
