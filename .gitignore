@@ -6,8 +6,12 @@ target/
 /docs/
 src/main/resources/local.env
 CLAUDE.md
+/.claude
 .github
 .github/copilot-instructions.md
+/.github
+src/main/resources/application-local.properties
+src/main/resources/application-dev.properties
 
 ### STS ###
 .apt_generated
@@ -37,3 +41,5 @@ build/
 ### VS Code ###
 .vscode/
 !/src/main/resources/application.properties
+src/main/resources/application.properties
+src/main/resources/application-test.properties
