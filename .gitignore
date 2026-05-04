@@ -11,7 +11,7 @@ CLAUDE.md
 .github/copilot-instructions.md
 /.github
 src/main/resources/application-local.properties
-src/main/resources/application-dev.properties
+src/main/resources/application-test.properties
 
 ### STS ###
 .apt_generated
@@ -41,5 +41,3 @@ build/
 ### VS Code ###
 .vscode/
 !/src/main/resources/application.properties
-src/main/resources/application.properties
-src/main/resources/application-test.properties
