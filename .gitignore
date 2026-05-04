@@ -6,8 +6,10 @@ target/
 /docs/
 src/main/resources/local.env
 CLAUDE.md
+/.claude
 .github
 .github/copilot-instructions.md
+/.github
 
 ### STS ###
 .apt_generated
