@@ -9,6 +9,4 @@ import java.util.List;
 @Repository
 public interface TrainingSessionTemplateRepository extends JpaRepository<TrainingSessionTemplate, Long> {
     List<TrainingSessionTemplate> findByBlockNameAndWeekNumberOrderByDayInWeekAsc(String blockName, Integer weekNumber);
-
-    TrainingSessionTemplate save(TrainingSessionTemplate trainingSessionTemplate);
 }
