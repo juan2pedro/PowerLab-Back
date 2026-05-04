@@ -9,6 +9,7 @@ import com.jpmt.strengthlab.models.dto.workoutsession.WorkoutSessionSummaryRespo
 import com.jpmt.strengthlab.models.mappers.WorkoutSessionMapper;
 import com.jpmt.strengthlab.repositories.TrainingSessionTemplateRepository;
 import com.jpmt.strengthlab.repositories.WorkoutSessionRepository;
+import com.jpmt.strengthlab.repositories.WorkoutSetRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -34,6 +35,9 @@ class WorkoutServiceTest {
 
     @Mock
     private TrainingSessionTemplateRepository templateRepository;
+
+    @Mock
+    private WorkoutSetRepository workoutSetRepository;
 
     @InjectMocks
     private WorkoutServiceImpl workoutService;
@@ -207,6 +211,7 @@ class WorkoutServiceTest {
 
         when(workoutSessionRepository.findHeaderById(1L)).thenReturn(java.util.Optional.of(workoutSession));
         when(templateRepository.findById(1L)).thenReturn(java.util.Optional.of(template));
+        when(workoutSetRepository.findByWorkoutEntryIdIn(List.of(1L))).thenReturn(Collections.emptyList());
         when(workoutSessionMapper.toDayResponse(workoutSession)).thenReturn(expectedResponse);
 
         WorkoutDayResponse result = workoutService.findFullDayById(1L);
