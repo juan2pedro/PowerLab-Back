@@ -13,7 +13,6 @@ import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = {com.jpmt.strengthlab.models.mappers.TrainingSetTemplateMapper.class})
 public interface WorkoutSessionMapper {
-    @Mapping(source = "trainingSessionTemplateId", target = "trainingSessionTemplate.id")
     WorkoutSession toEntity(WorkoutSessionRequest dto);
 
     @Mapping(source = "trainingSessionTemplate.id", target = "trainingSessionTemplateId")

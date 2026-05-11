@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestControllerAdvice
+@SuppressWarnings("unused")
 public class ErrorHandlerExceptionController {
 
     private static final Logger logger = LoggerFactory.getLogger(ErrorHandlerExceptionController.class);
@@ -30,6 +31,8 @@ public class ErrorHandlerExceptionController {
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
         });
+
+        logger.warn("Validation failed: {}", errors);
 
         ApiErrorResponse apiError = new ApiErrorResponse(
                 errors,
@@ -44,9 +47,11 @@ public class ErrorHandlerExceptionController {
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex) {
+        logger.debug("Resource not found: {}", ex.getMessage());
+
         ApiErrorResponse apiError = new ApiErrorResponse(
                 null,
-                ex.getMessage(),
+                "Resource not found",
                 "Resource Not Found",
                 HttpStatus.NOT_FOUND.value(),
                 new Date()
@@ -56,9 +61,10 @@ public class ErrorHandlerExceptionController {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleGenericException(Exception ex) {
+        logger.error("Unhandled exception", ex);
         ApiErrorResponse apiError = new ApiErrorResponse(
                 null,
-                ex.getMessage(),
+                "Se produjo un error procesando la solicitud",
                 "Internal Server Error",
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 new Date()
@@ -76,8 +82,9 @@ public class ErrorHandlerExceptionController {
 
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiErrorResponse> handleConstraintViolation(ConstraintViolationException ex) {
+        logger.warn("Constraint violation", ex);
         ApiErrorResponse apiError = new ApiErrorResponse(
-                null, ex.getMessage(), "Constraint Violation", HttpStatus.BAD_REQUEST.value(), new Date()
+                null, "Validación de restricción fallida", "Constraint Violation", HttpStatus.BAD_REQUEST.value(), new Date()
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
     }
