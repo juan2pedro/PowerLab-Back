@@ -22,7 +22,7 @@ public class OpenApiConfig {
                                 .description("Servidor local de desarrollo"),
                         new Server()
                                 .url("https://api.strengthlab.com")
-                                .description("Servidor de producción")
+                                .description("Servidor de producción no disponible por el momento")
                 ))
                 .info(new Info()
                         .title("StrengthLab API")

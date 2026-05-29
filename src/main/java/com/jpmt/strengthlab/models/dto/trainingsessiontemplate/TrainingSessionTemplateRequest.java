@@ -16,7 +16,7 @@ public record TrainingSessionTemplateRequest(
         @Min(value = 1, message = "dayInWeek must be between 1 and 7")
         @Max(value = 7, message = "dayInWeek must be between 1 and 7")
         Integer dayInWeek,
-       // @NotNull(message = "conjugateDayType is required")
+        @NotNull(message = "conjugateDayType is required")
         ConjugatedDayType conjugatedDayType,
         String notes
 ) {

@@ -12,7 +12,7 @@ public record ExerciseRequest(
         @Schema(description = "Nombre del ejercicio", example = "Sentadilla con barra")
         @NotBlank(message = "baseName is required")
         String baseName,
-        @Schema(description = "Patrón principal del ejercicio", example = "SENTADILLA")
+        @Schema(description = "Patrón principal del ejercicio", example = "SQUAT")
         @NotNull(message = "mainPattern is required")
         MainPattern mainPattern,
         Implement implement,
