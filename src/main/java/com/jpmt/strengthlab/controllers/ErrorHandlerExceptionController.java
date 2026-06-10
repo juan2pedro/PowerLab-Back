@@ -1,5 +1,6 @@
 package com.jpmt.strengthlab.controllers;
 
+import com.jpmt.strengthlab.exceptions.BadRequestException;
 import com.jpmt.strengthlab.exceptions.ResourceNotFoundException;
 import com.jpmt.strengthlab.models.dto.ApiErrorResponse;
 import jakarta.validation.ConstraintViolationException;
@@ -8,10 +9,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -59,6 +62,19 @@ public class ErrorHandlerExceptionController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiError);
     }
 
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ApiErrorResponse> handleBadRequestException(BadRequestException ex) {
+        logger.warn("Bad request: {}", ex.getMessage());
+        ApiErrorResponse apiError = new ApiErrorResponse(
+                null,
+                ex.getMessage(),
+                "Bad Request",
+                HttpStatus.BAD_REQUEST.value(),
+                new Date()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleGenericException(Exception ex) {
         logger.error("Unhandled exception", ex);
@@ -89,4 +105,25 @@ public class ErrorHandlerExceptionController {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
     }
 
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        String requiredType = ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "valor válido";
+        String message = String.format("El parámetro '%s' tiene un valor no válido: '%s'. Se esperaba un %s.",
+                ex.getName(), ex.getValue(), requiredType);
+        logger.warn("Type mismatch: {}", message);
+        ApiErrorResponse apiError = new ApiErrorResponse(
+                Map.of(ex.getName(), "valor no válido: '" + ex.getValue() + "'"),
+                message, "Type Mismatch", HttpStatus.BAD_REQUEST.value(), new Date()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        logger.warn("Http message not readable", ex);
+        ApiErrorResponse apiError = new ApiErrorResponse(
+                null, "Mensaje HTTP no legible", "Http Message Not Readable", HttpStatus.BAD_REQUEST.value(), new Date()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
+    }
 }
