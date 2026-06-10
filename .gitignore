@@ -1,16 +1,26 @@
-HELP.md
+# ===== Build =====
 target/
-.mvn/wrapper/maven-wrapper.jar
+build/
 !**/src/main/**/target/
 !**/src/test/**/target/
-/docs/
-src/main/resources/local.env
-CLAUDE.md
-/.claude
-.github
-.github/copilot-instructions.md
-/.github
+!**/src/main/**/build/
+!**/src/test/**/build/
+.mvn/wrapper/maven-wrapper.jar
 
+# ===== Secretos y configuración sensible =====
+.env
+*.env
+!.env.example
+
+# ===== Documentación interna / asistentes =====
+*.md
+!README.md
+CLAUDE.md
+/docs/
+/.claude/
+.github/copilot-instructions.md
+
+# ===== IDE =====
 ### STS ###
 .apt_generated
 .classpath
@@ -32,13 +42,6 @@ CLAUDE.md
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
 
 ### VS Code ###
 .vscode/
-!/src/main/resources/application.properties
-src/main/resources/application-local.properties
-src/main/resources/application-test.properties
-src/main/resources/application.properties
