@@ -1,5 +1,0 @@
-package com.jpmt.strengthlab.models.domain;
-
-public enum Implement {
-    BARBELL, DUMBBELL, KETTLEBELL, TRAP_BAR, SAFETY_BAR, CAMBERED_BAR, SWISS_BAR, PLATES, CABLE, MACHINE, RINGS, BODYWEIGHT, LANDMINE, PULLUP_BAR
-}
