@@ -28,8 +28,27 @@ services:
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
       JPA_DDL_AUTO: validate
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"
+    networks:
+      - web
+      - default
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: powerlab-cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - app
+    networks:
+      - web
+
+networks:
+  web:
+    name: powerlab-web
 
 volumes:
   pgdata:
