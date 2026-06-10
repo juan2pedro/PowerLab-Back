@@ -1,5 +1,6 @@
 package com.jpmt.strengthlab.models.dto.workoutsession;
 
+import com.jpmt.strengthlab.models.dto.exercise.ExerciseResponse;
 import com.jpmt.strengthlab.models.dto.trainingsettemplate.TrainingSetTemplateResponse;
 
 import java.time.LocalDate;
@@ -23,21 +24,11 @@ public record WorkoutDayResponse(
 
     public record Entry(
             Long entryId,
-            ExerciseInfo exercise,
+            ExerciseResponse exercise,
             Target target,          // opcional: si viene de template
             String notes,
             Boolean isWarmup,
             List<Set> sets
-    ) {}
-
-    public record ExerciseInfo(
-            Long id,
-            String baseName,
-            String mainPattern,
-            String implement,
-            String setup,
-            String stance,
-            String grip
     ) {}
 
     public record Target(

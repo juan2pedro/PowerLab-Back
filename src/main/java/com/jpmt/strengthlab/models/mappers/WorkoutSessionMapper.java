@@ -1,6 +1,9 @@
 package com.jpmt.strengthlab.models.mappers;
 
-import com.jpmt.strengthlab.models.domain.*;
+import com.jpmt.strengthlab.models.domain.TrainingSessionTemplate;
+import com.jpmt.strengthlab.models.domain.WorkoutEntry;
+import com.jpmt.strengthlab.models.domain.WorkoutSession;
+import com.jpmt.strengthlab.models.domain.WorkoutSet;
 import com.jpmt.strengthlab.models.dto.workoutsession.WorkoutDayResponse;
 import com.jpmt.strengthlab.models.dto.workoutsession.WorkoutSessionDetailResponse;
 import com.jpmt.strengthlab.models.dto.workoutsession.WorkoutSessionRequest;
@@ -11,8 +14,11 @@ import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = {com.jpmt.strengthlab.models.mappers.TrainingSetTemplateMapper.class})
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR, uses = {com.jpmt.strengthlab.models.mappers.TrainingSetTemplateMapper.class})
 public interface WorkoutSessionMapper {
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "trainingSessionTemplate", ignore = true)
+    @Mapping(target = "entries", ignore = true)
     WorkoutSession toEntity(WorkoutSessionRequest dto);
 
     @Mapping(source = "trainingSessionTemplate.id", target = "trainingSessionTemplateId")
@@ -34,6 +40,8 @@ public interface WorkoutSessionMapper {
     }
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "trainingSessionTemplate", ignore = true)
+    @Mapping(target = "entries", ignore = true)
     void updateEntityFromRequest(
             WorkoutSessionRequest request,
             @MappingTarget WorkoutSession entity
@@ -48,11 +56,12 @@ public interface WorkoutSessionMapper {
    WorkoutDayResponse.TemplateInfo toTemplateInfo(TrainingSessionTemplate entity);
 
    @Mapping(source = "id", target = "entryId")
+   @Mapping(source = "exercise", target = "exercise")
+   @Mapping(target = "target", ignore = true) // TODO: correlar con TrainingSetTemplate (FK directa o lookup exercise+order)
    WorkoutDayResponse.Entry toEntry(WorkoutEntry entity);
 
+   @Mapping(source = "sequenceNumber", target = "sequenceNumber")
    WorkoutDayResponse.Set toSet(WorkoutSet entity);
-
-   WorkoutDayResponse.ExerciseInfo toExerciseInfo(Exercise entity);
 
    default String map(OffsetDateTime value) {
        return value != null ? value.toString() : null;

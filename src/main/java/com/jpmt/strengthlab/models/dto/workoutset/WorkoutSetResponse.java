@@ -11,7 +11,7 @@ public record WorkoutSetResponse(
         Integer reps,
         Double weight,
         IntensityType intensityType,
-        Integer intensityValue,
+        Double intensityValue,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
 ) {

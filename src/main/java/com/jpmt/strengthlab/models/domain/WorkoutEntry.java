@@ -42,7 +42,8 @@ public class WorkoutEntry {
     @Column(name = "notes", length = 500)
     private String notes;
 
-    @OneToMany(mappedBy="workoutEntry", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "workoutEntry", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("set_number ASC")
+    @Builder.Default
     private Set<WorkoutSet> sets = new LinkedHashSet<>();
 }
