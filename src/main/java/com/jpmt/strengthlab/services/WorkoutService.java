@@ -9,6 +9,7 @@ import com.jpmt.strengthlab.models.dto.workoutsession.WorkoutSessionRequest;
 import com.jpmt.strengthlab.models.dto.workoutsession.WorkoutSessionSummaryResponse;
 import com.jpmt.strengthlab.models.dto.workoutset.WorkoutSetRequest;
 import com.jpmt.strengthlab.models.dto.workoutset.WorkoutSetResponse;
+import com.jpmt.strengthlab.models.dto.workoutset.WorkoutSetWithExerciseRequest;
 import jakarta.validation.Valid;
 
 import java.time.LocalDate;
@@ -40,6 +41,8 @@ public interface WorkoutService {
     List<WorkoutSetResponse> findAllWorkoutSets(Long entryId);
 
     WorkoutSetResponse saveWorkoutSet(Long entryId, @Valid WorkoutSetRequest workoutSet);
+
+    WorkoutDayResponse.Entry addSetByExercise(Long workoutId, @Valid WorkoutSetWithExerciseRequest request);
 
     WorkoutSetResponse updateWorkoutSet(Long id, @Valid WorkoutSetRequest workoutSet);
 

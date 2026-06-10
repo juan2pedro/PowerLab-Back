@@ -84,7 +84,7 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     @Transactional(readOnly = true)
     @Override
     public TrainingSessionTemplateDetailResponse findSessionById(Long id) {
-        TrainingSessionTemplate entity = sessionRepository.findById(id)
+        TrainingSessionTemplate entity = sessionRepository.findByIdOrderByDisplayOrder(id)
                 .orElseThrow(() -> new ResourceNotFoundException(TSESSIONT, "id", id));
         return sessionMapper.toDetailResponse(entity);
     }

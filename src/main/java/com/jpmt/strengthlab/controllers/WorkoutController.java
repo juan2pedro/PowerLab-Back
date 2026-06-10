@@ -10,6 +10,7 @@ import com.jpmt.strengthlab.models.dto.workoutsession.WorkoutSessionRequest;
 import com.jpmt.strengthlab.models.dto.workoutsession.WorkoutSessionSummaryResponse;
 import com.jpmt.strengthlab.models.dto.workoutset.WorkoutSetRequest;
 import com.jpmt.strengthlab.models.dto.workoutset.WorkoutSetResponse;
+import com.jpmt.strengthlab.models.dto.workoutset.WorkoutSetWithExerciseRequest;
 import com.jpmt.strengthlab.services.WorkoutService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -366,6 +367,48 @@ public class WorkoutController {
             @Parameter(description = "ID de la entrada") @PathVariable Long entryId) {
         List<WorkoutSetResponse> sets = workoutService.findAllWorkoutSets(entryId);
         return ResponseEntity.ok(sets);
+    }
+
+    @PostMapping("/{workoutId}/sets")
+    @Operation(
+            summary = "Create workout set by exercise (lazy entry)",
+            description = "Crea una serie identificando el ejercicio. Si todavía no existe una entry para ese ejercicio en el workout, se crea de forma transparente a partir del SetTemplate correspondiente del template. Devuelve la entry completa para que el frontend conozca el entryId y pueda usar los endpoints existentes.",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Datos del set (exerciseId, peso, reps, RPE, etc.)",
+                    required = true,
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = WorkoutSetWithExerciseRequest.class))
+            )
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Set creado exitosamente (entry creada si no existía)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = WorkoutDayResponse.Entry.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Solicitud inválida o ejercicio no planificado en el template del workout",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ApiErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Workout o template no encontrado",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ApiErrorResponse.class))
+            )
+    })
+    public ResponseEntity<WorkoutDayResponse.Entry> addWorkoutSetByExercise(
+            @Parameter(description = "ID del workout") @PathVariable Long workoutId,
+            @Valid @RequestBody WorkoutSetWithExerciseRequest request) {
+        WorkoutDayResponse.Entry entry = workoutService.addSetByExercise(workoutId, request);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{entryId}")
+                .buildAndExpand(entry.entryId())
+                .toUri();
+        return ResponseEntity.created(location).body(entry);
     }
 
     @PostMapping("/{workoutId}/entries/{entryId}/sets")

@@ -37,14 +37,13 @@ public interface WorkoutSessionRepository extends JpaRepository<WorkoutSession, 
     Optional<WorkoutSession> findFullById(@Param("id") Long id);
 
     @Query("SELECT ws FROM WorkoutSession ws " +
-            "JOIN FETCH ws.entries e " +
-            "JOIN FETCH e.sets " +
+            "LEFT JOIN FETCH ws.entries e " +
+            "LEFT JOIN FETCH e.exercise " +
             "WHERE ws.date = :date")
     Optional<WorkoutSession> findFullByDate(@Param("date") LocalDate date);
 
     @Query("SELECT DISTINCT ws FROM WorkoutSession ws " +
-            "JOIN FETCH ws.entries e " +
-            "LEFT JOIN FETCH e.sets " +
+            "LEFT JOIN FETCH ws.entries e " +
             "WHERE ws.date BETWEEN :startDate AND :endDate")
     List<WorkoutSession> findFullByDateRange(
             @Param("startDate") LocalDate startDate,

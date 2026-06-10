@@ -1,5 +1,6 @@
 package com.jpmt.strengthlab.services;
 
+import com.jpmt.strengthlab.exceptions.BadRequestException;
 import com.jpmt.strengthlab.exceptions.ResourceNotFoundException;
 import com.jpmt.strengthlab.models.domain.*;
 import com.jpmt.strengthlab.models.dto.workoutentry.WorkoutEntryCreateRequest;
@@ -11,6 +12,7 @@ import com.jpmt.strengthlab.models.dto.workoutsession.WorkoutSessionRequest;
 import com.jpmt.strengthlab.models.dto.workoutsession.WorkoutSessionSummaryResponse;
 import com.jpmt.strengthlab.models.dto.workoutset.WorkoutSetRequest;
 import com.jpmt.strengthlab.models.dto.workoutset.WorkoutSetResponse;
+import com.jpmt.strengthlab.models.dto.workoutset.WorkoutSetWithExerciseRequest;
 import com.jpmt.strengthlab.models.mappers.WorkoutEntryMapper;
 import com.jpmt.strengthlab.models.mappers.WorkoutSessionMapper;
 import com.jpmt.strengthlab.models.mappers.WorkoutSetMapper;
@@ -185,6 +187,56 @@ public class WorkoutServiceImpl implements WorkoutService {
 
     @Transactional
     @Override
+    public WorkoutDayResponse.Entry addSetByExercise(Long workoutId, @Valid WorkoutSetWithExerciseRequest request) {
+        WorkoutSession session = sessionRepository.findHeaderById(workoutId)
+                .orElseThrow(() -> new ResourceNotFoundException("WorkoutSession", "id", workoutId));
+
+        if (session.getTrainingSessionTemplate() == null) {
+            throw new BadRequestException("workout has no template, cannot validate exerciseId");
+        }
+
+        Long templateId = session.getTrainingSessionTemplate().getId();
+        TrainingSessionTemplate fullTemplate = templateRepository.findByIdOrderByDisplayOrder(templateId)
+                .orElseThrow(() -> new ResourceNotFoundException("TrainingSessionTemplate", "id", templateId));
+
+        TrainingSetTemplate matchingSetTemplate = fullTemplate.getSetTemplates().stream()
+                .filter(st -> st.getExercise() != null && request.exerciseId().equals(st.getExercise().getId()))
+                .findFirst()
+                .orElseThrow(() -> new BadRequestException(
+                        "exercise " + request.exerciseId() + " no planificado en este workout"));
+
+        WorkoutEntry entry = session.getEntries().stream()
+                .filter(e -> e.getExercise() != null && request.exerciseId().equals(e.getExercise().getId()))
+                .findFirst()
+                .orElseGet(() -> {
+                    WorkoutEntry newEntry = WorkoutEntry.builder()
+                            .session(session)
+                            .exercise(matchingSetTemplate.getExercise())
+                            .isWarmup(false)
+                            .notes(matchingSetTemplate.getNotes())
+                            .build();
+                    WorkoutEntry saved = entryRepository.save(newEntry);
+                    session.getEntries().add(saved);
+                    return saved;
+                });
+
+        WorkoutSet set = WorkoutSet.builder()
+                .workoutEntry(entry)
+                .sequenceNumber(request.sequenceNumber())
+                .reps(request.reps())
+                .weight(request.weight())
+                .intensityType(request.intensityType())
+                .intensityValue(request.intensityValue())
+                .build();
+
+        WorkoutSet savedSet = workoutSetRepository.save(set);
+        entry.getSets().add(savedSet);
+
+        return workoutSessionMapper.toEntry(entry);
+    }
+
+    @Transactional
+    @Override
     public WorkoutSetResponse updateWorkoutSet(Long id, @Valid WorkoutSetRequest workoutSet) {
         WorkoutSet existingSet = workoutSetRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("WorkoutSet", "id", id));
@@ -206,7 +258,7 @@ public class WorkoutServiceImpl implements WorkoutService {
     @Transactional(readOnly = true)
     public WorkoutDayResponse loadFullDay(WorkoutSession workoutSession, Long templateId) {
         if (templateId != null) {
-            TrainingSessionTemplate fullTemplate = templateRepository.findById(templateId)
+            TrainingSessionTemplate fullTemplate = templateRepository.findByIdOrderByDisplayOrder(templateId)
                     .orElseThrow(() -> new ResourceNotFoundException("TrainingSessionTemplate", "id", templateId));
             workoutSession.setTrainingSessionTemplate(fullTemplate);
         }
