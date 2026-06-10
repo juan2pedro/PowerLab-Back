@@ -1,21 +1,24 @@
 ## ⚠ Portfolio Project
 
-StrengthLab is a personal project developed to demonstrate backend architecture with Java, Spring Boot and Angular.
+PowerLab is a personal project developed to demonstrate backend architecture with Java, Spring Boot and Angular.
 
 The code is publicly visible for educational and portfolio purposes only.
 Commercial use is not permitted without explicit permission.
 
 ---
 
-# StrengthLab 🏋️‍♂️
+# PowerLab 🏋️‍♂️
 
 **Strength Training Management Platform (MVP)**
 
-StrengthLab is a specialized web application designed for strength athletes and coaches, focused on **Powerlifting programming** and **Conjugate Method training systems**.
+PowerLab is a web application for strength athletes and coaches to plan and track structured training programs.
 
 The goal of this project is to model complex training programming structures while providing a clean and scalable backend architecture.
 
 This repository showcases a **production-style backend architecture** using modern Java and Spring Boot technologies.
+
+> **Disclaimer**: PowerLab is an informational and tracking tool. It is **not** medical or fitness advice.
+> Consult a qualified professional before starting any training program. Use at your own risk.
 
 ---
 
@@ -165,7 +168,7 @@ http://localhost:8080/swagger-ui.html
 
 Create database:
 
-strengthlab
+powerlab
 
 Update database credentials in:
 

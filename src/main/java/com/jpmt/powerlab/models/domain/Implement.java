@@ -1,0 +1,7 @@
+package com.jpmt.powerlab.models.domain;
+
+public enum Implement {
+    BARBELL, DUMBBELL, KETTLEBELL, TRAP_BAR, SAFETY_BAR, CAMBERED_BAR,
+    SWISS_BAR, PLATES, CABLE, MACHINE, SMITH, RINGS, BODYWEIGHT,
+    LANDMINE, PULLUP_BAR
+}

@@ -1,4 +1,4 @@
--- Baseline inicial del esquema StrengthLab.
+-- Baseline inicial del esquema PowerLab.
 -- Generado a partir de las entidades JPA (Hibernate metadata) y formateado.
 -- A partir de aqui, todo cambio de esquema va en una nueva migracion V2, V3, ...
 

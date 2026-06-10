@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:16-alpine
-    container_name: strengthlab-db
+    container_name: powerlab-db
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -17,7 +17,7 @@ services:
 
   app:
     build: .
-    container_name: strengthlab-api
+    container_name: powerlab-api
     restart: unless-stopped
     depends_on:
       db:
