@@ -5,7 +5,7 @@ on :
     branches:
       - main
       - develop
-      - FLAYWAY
+      - FLYWAY
   pull_request:
     branches:
       - main
