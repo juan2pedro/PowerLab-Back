@@ -28,6 +28,7 @@ services:
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
       JPA_DDL_AUTO: validate
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      SWAGGER_SERVER_URL: ${SWAGGER_SERVER_URL}
     expose:
       - "8080"
     networks:
