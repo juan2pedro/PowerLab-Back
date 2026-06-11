@@ -22,11 +22,9 @@ public class OpenApiConfig {
         return new OpenAPI()
                 .servers(List.of(
                         new Server()
-                                .url("http://localhost:8080")
-                                .description("Servidor local de desarrollo"),
-                        new Server()
-                                .url("https://api-powerlab.juanpemt.dev")
-                                .description("Servidor de producción no disponible por el momento")
+                                .url(serverUrl)
+                                .description("Servidor de swagger")
+
                 ))
                 .info(new Info()
                         .title("PowerLab API")
