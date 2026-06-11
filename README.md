@@ -9,7 +9,7 @@ Commercial use is not permitted without explicit permission.
 
 # PowerLab 🏋️‍♂️
 
-**Strength Training Management Platform (MVP)**
+**Strength Training Management Platform (MVP : https://powerlab.juanpemt.dev)** 
 
 PowerLab is a web application for strength athletes and coaches to plan and track structured training programs.
 
@@ -135,22 +135,29 @@ This structure allows modelling:
 - **Spring Data JPA / Hibernate**
 - **MapStruct**
 - **Maven**
+- **Lombok**
+- **Springdoc OpenAPI/Swagger**
+
 
 ## Database
 
 - **PostgreSQL**
+- **Flyway** for migrations
 
 ## Frontend
 
-- **Angular** (in progress)
+- **Angular**
+- **Angular Material**
+- **TallWind CSS**
 
 ---
 
 # 📡 API Documentation
 
 Once the application is running, Swagger documentation is available at:
-
-http://localhost:8080/swagger-ui.html
+https://api-powerlab.juanpemt.dev/swagger-ui/index.html 
+or locally at:
+http://localhost:8080/swagger-ui/index.html 
 
 ---
 
@@ -161,6 +168,7 @@ http://localhost:8080/swagger-ui.html
 - Java 21
 - Maven
 - PostgreSQL
+- docker
 
 ---
 
