@@ -21,7 +21,7 @@ public class OpenApiConfig {
                                 .url("http://localhost:8080")
                                 .description("Servidor local de desarrollo"),
                         new Server()
-                                .url("https://api.powerlab.com")
+                                .url("https://api-powerlab.juanpemt.dev")
                                 .description("Servidor de producción no disponible por el momento")
                 ))
                 .info(new Info()
