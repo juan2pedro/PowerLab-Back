@@ -22,20 +22,6 @@ public interface WorkoutSessionRepository extends JpaRepository<WorkoutSession, 
     })
     Optional<WorkoutSession> findHeaderById(Long id);
 
-    @EntityGraph(attributePaths = {
-            "trainingSessionTemplate",
-            "entries",
-            "entries.exercise"
-    })
-    Optional<WorkoutSession> findHeaderByDate(LocalDate date);
-
-
-    @Query("SELECT ws FROM WorkoutSession ws " +
-            "JOIN FETCH ws.entries e " +
-            "JOIN FETCH e.sets " +
-            "WHERE ws.id = :id")
-    Optional<WorkoutSession> findFullById(@Param("id") Long id);
-
     @Query("SELECT ws FROM WorkoutSession ws " +
             "LEFT JOIN FETCH ws.entries e " +
             "LEFT JOIN FETCH e.exercise " +

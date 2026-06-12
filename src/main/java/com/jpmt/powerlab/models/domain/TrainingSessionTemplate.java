@@ -46,6 +46,7 @@ public class TrainingSessionTemplate {
     private String notes;
 
     @OneToMany(mappedBy = "sessionTemplate", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("displayOrder ASC")
     private List<TrainingSetTemplate> setTemplates;
 
 }

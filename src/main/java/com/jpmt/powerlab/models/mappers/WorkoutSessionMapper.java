@@ -8,7 +8,10 @@ import com.jpmt.powerlab.models.dto.workoutsession.WorkoutDayResponse;
 import com.jpmt.powerlab.models.dto.workoutsession.WorkoutSessionDetailResponse;
 import com.jpmt.powerlab.models.dto.workoutsession.WorkoutSessionRequest;
 import com.jpmt.powerlab.models.dto.workoutsession.WorkoutSessionSummaryResponse;
-import org.mapstruct.*;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
+import org.mapstruct.ReportingPolicy;
 
 import java.time.OffsetDateTime;
 import java.util.Collections;
@@ -38,14 +41,6 @@ public interface WorkoutSessionMapper {
                 .map(WorkoutEntry::getId)
                 .toList();
     }
-
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "trainingSessionTemplate", ignore = true)
-    @Mapping(target = "entries", ignore = true)
-    void updateEntityFromRequest(
-            WorkoutSessionRequest request,
-            @MappingTarget WorkoutSession entity
-    );
 
    @Mapping(source = "id", target = "workoutId")
    @Mapping(source = "trainingSessionTemplate", target = "template")
