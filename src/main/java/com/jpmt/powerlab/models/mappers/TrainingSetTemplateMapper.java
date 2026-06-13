@@ -25,11 +25,6 @@ public interface TrainingSetTemplateMapper {
     @Mapping(source = "targetIntensityType", target = "targetIntensityType")
     TrainingSetTemplate toEntity(TrainingSetTemplateRequest dto);
 
-    @Mapping(target = "sessionTemplate", ignore = true)
-    @Mapping(target = "exercise.id", source = "exerciseId")
-    @Mapping(source = "targetIntensityType", target = "targetIntensityType")
-    TrainingSetTemplate toUpdateEntity(TrainingSetTemplateUpdateRequest dto);
-
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "sessionTemplate", ignore = true)
     @Mapping(target = "exercise", ignore = true)

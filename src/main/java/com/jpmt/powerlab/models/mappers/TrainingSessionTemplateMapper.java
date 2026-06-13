@@ -17,11 +17,7 @@ public interface TrainingSessionTemplateMapper {
     TrainingSessionTemplateSummaryResponse toSummaryResponse(TrainingSessionTemplate entity);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "templates", ignore = true) // MapStruct ve "templates" en el builder de Lombok para el campo `setTemplates`
-    TrainingSessionTemplate toCreateEntity(TrainingSessionTemplateRequest dto);
-
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "templates", ignore = true)
+    @Mapping(target = "setTemplates", ignore = true)
     TrainingSessionTemplate toEntity(TrainingSessionTemplateRequest dto);
 
     @Mapping(target = "id", ignore = true)

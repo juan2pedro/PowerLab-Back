@@ -43,7 +43,7 @@ public class WorkoutEntry {
     private String notes;
 
     @OneToMany(mappedBy = "workoutEntry", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("set_number ASC")
+    @OrderBy("sequenceNumber ASC")
     @Builder.Default
     private Set<WorkoutSet> sets = new LinkedHashSet<>();
 }
