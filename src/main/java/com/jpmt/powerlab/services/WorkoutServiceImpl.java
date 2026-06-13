@@ -199,7 +199,7 @@ public class WorkoutServiceImpl implements WorkoutService {
         TrainingSessionTemplate fullTemplate = templateRepository.findByIdOrderByDisplayOrder(templateId)
                 .orElseThrow(() -> new ResourceNotFoundException("TrainingSessionTemplate", "id", templateId));
 
-        TrainingSetTemplate matchingSetTemplate = fullTemplate.getSetTemplates().stream()
+        TrainingSetTemplate matchingSetTemplate = fullTemplate.getTrainingSets().stream()
                 .filter(st -> st.getExercise() != null && request.exerciseId().equals(st.getExercise().getId()))
                 .findFirst()
                 .orElseThrow(() -> new BadRequestException(

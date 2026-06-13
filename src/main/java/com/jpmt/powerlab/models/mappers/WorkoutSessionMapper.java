@@ -47,7 +47,7 @@ public interface WorkoutSessionMapper {
    WorkoutDayResponse toDayResponse(WorkoutSession entity);
 
    @Mapping(source = "conjugatedDayType", target = "conjugateDayType")
-   @Mapping(source = "setTemplates", target = "setTemplates")
+   @Mapping(source = "trainingSets", target = "setTemplates")
    WorkoutDayResponse.TemplateInfo toTemplateInfo(TrainingSessionTemplate entity);
 
    @Mapping(source = "id", target = "entryId")
