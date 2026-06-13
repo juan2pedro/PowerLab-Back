@@ -14,7 +14,7 @@ public interface TrainingSessionTemplateRepository extends JpaRepository<Trainin
     List<TrainingSessionTemplate> findByBlockNameAndWeekNumberOrderByDayInWeekAsc(String blockName, Integer weekNumber);
 
     @Query("SELECT t FROM TrainingSessionTemplate t " +
-            "LEFT JOIN FETCH t.setTemplates st " +
+            "LEFT JOIN FETCH t.trainingSets st " +
             "LEFT JOIN FETCH st.exercise " +
             "WHERE t.id = :id " +
             "ORDER BY st.displayOrder ASC")

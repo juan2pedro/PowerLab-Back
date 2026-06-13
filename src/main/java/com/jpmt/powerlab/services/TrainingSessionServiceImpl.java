@@ -147,7 +147,7 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
         TrainingSessionTemplate session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException(TSESSIONT, "id", sessionId));
 
-        return session.getSetTemplates().stream()
+        return session.getTrainingSets().stream()
                 .map(setMapper::toResponse)
                 .toList();
     }
