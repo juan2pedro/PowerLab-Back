@@ -13,7 +13,7 @@ import org.mapstruct.ReportingPolicy;
 public abstract class TrainingSessionTemplateMapper {
 
     @Mapping(source = "conjugatedDayType", target = "conjugatedDayType")
-    @Mapping(target = "setTemplates", ignore = true)
+    @Mapping(source = "trainingSets", target = "setTemplates")
     public abstract TrainingSessionTemplateDetailResponse toDetailResponse(TrainingSessionTemplate entity);
 
     public abstract TrainingSessionTemplateSummaryResponse toSummaryResponse(TrainingSessionTemplate entity);
