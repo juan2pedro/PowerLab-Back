@@ -12,7 +12,7 @@ public record TrainingSetTemplateRequest(
         @Min(value = 1, message = "targetReps must be at least 1")
         Integer targetReps,
         Double targetWeight,
-        String targetIntensity,
+        Integer targetIntensity,
         IntensityType targetIntensityType,
         String rest,
         String notes,

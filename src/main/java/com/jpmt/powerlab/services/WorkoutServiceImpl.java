@@ -3,6 +3,7 @@ package com.jpmt.powerlab.services;
 import com.jpmt.powerlab.exceptions.BadRequestException;
 import com.jpmt.powerlab.exceptions.ResourceNotFoundException;
 import com.jpmt.powerlab.models.domain.*;
+import com.jpmt.powerlab.models.dto.exercise.LastExerciseResponse;
 import com.jpmt.powerlab.models.dto.workoutentry.WorkoutEntryCreateRequest;
 import com.jpmt.powerlab.models.dto.workoutentry.WorkoutEntryResponse;
 import com.jpmt.powerlab.models.dto.workoutentry.WorkoutEntryUpdateRequest;
@@ -18,6 +19,7 @@ import com.jpmt.powerlab.models.mappers.WorkoutSessionMapper;
 import com.jpmt.powerlab.models.mappers.WorkoutSetMapper;
 import com.jpmt.powerlab.repositories.*;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,6 +61,7 @@ public class WorkoutServiceImpl implements WorkoutService {
     @Transactional
     @Override
     public WorkoutSessionDetailResponse saveWorkoutSession(WorkoutSessionRequest sessionRequest) {
+        assertNoWorkoutOnDate(sessionRequest.date());
         WorkoutSession session = workoutSessionMapper.toEntity(sessionRequest);
 
         if (sessionRequest.trainingSessionTemplateId() != null) {
@@ -74,6 +77,7 @@ public class WorkoutServiceImpl implements WorkoutService {
     @Transactional
     @Override
     public WorkoutSessionDetailResponse createWorkoutFromTemplate(Long templateId, WorkoutSessionRequest sessionRequest) {
+        assertNoWorkoutOnDate(sessionRequest.date());
         TrainingSessionTemplate template = templateRepository.findById(templateId)
                 .orElseThrow(() -> new ResourceNotFoundException("TrainingSessionTemplate", "id", templateId));
 
@@ -82,6 +86,16 @@ public class WorkoutServiceImpl implements WorkoutService {
 
         WorkoutSession saved = sessionRepository.save(session);
         return workoutSessionMapper.toDetailResponse(saved);
+    }
+
+    /**
+     * Solo puede existir un workout por fecha (el modelo de la app trabaja con "el día").
+     * Permitir duplicados rompía el GET /day, que devuelve un único workout.
+     */
+    private void assertNoWorkoutOnDate(LocalDate date) {
+        if (date != null && sessionRepository.existsByDate(date)) {
+            throw new BadRequestException("Ya existe un entreno para el " + date);
+        }
     }
 
     @Override
@@ -95,7 +109,8 @@ public class WorkoutServiceImpl implements WorkoutService {
     @Override
     @Transactional(readOnly = true)
     public WorkoutDayResponse findFullDayByDate(LocalDate date) {
-          WorkoutSession session = sessionRepository.findFullByDate(date).orElseThrow(() -> new ResourceNotFoundException("WorkoutSession", "date", date));
+          WorkoutSession session = sessionRepository.findFullByDate(date).stream().findFirst()
+                  .orElseThrow(() -> new ResourceNotFoundException("WorkoutSession", "date", date));
         Long templateId = session.getTrainingSessionTemplate() != null ? session.getTrainingSessionTemplate().getId() : null;
 
         return this.loadFullDay(session,templateId);
@@ -255,6 +270,8 @@ public class WorkoutServiceImpl implements WorkoutService {
         workoutSetRepository.deleteById(id);
     }
 
+
+
     @Transactional(readOnly = true)
     public WorkoutDayResponse loadFullDay(WorkoutSession workoutSession, Long templateId) {
         if (templateId != null) {
@@ -282,4 +299,15 @@ public class WorkoutServiceImpl implements WorkoutService {
         }
         return workoutSessionMapper.toDayResponse(workoutSession);
     }
+
+    @Override
+    public LastExerciseResponse findLastSetByExerciseId(Long exerciseId) {
+        WorkoutSet lastSet = workoutSetRepository.findLatestForExercise(exerciseId, PageRequest.of(0, 1))
+                .stream().findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("WorkoutSet", "exerciseId", exerciseId));
+
+        return workoutSetMapper.toLastExerciseResponse(lastSet);
+    }
+
+
 }

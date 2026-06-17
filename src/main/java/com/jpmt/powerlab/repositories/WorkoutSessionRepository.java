@@ -22,11 +22,14 @@ public interface WorkoutSessionRepository extends JpaRepository<WorkoutSession, 
     })
     Optional<WorkoutSession> findHeaderById(Long id);
 
-    @Query("SELECT ws FROM WorkoutSession ws " +
+    @Query("SELECT DISTINCT ws FROM WorkoutSession ws " +
             "LEFT JOIN FETCH ws.entries e " +
             "LEFT JOIN FETCH e.exercise " +
-            "WHERE ws.date = :date")
-    Optional<WorkoutSession> findFullByDate(@Param("date") LocalDate date);
+            "WHERE ws.date = :date " +
+            "ORDER BY ws.id DESC")
+    List<WorkoutSession> findFullByDate(@Param("date") LocalDate date);
+
+    boolean existsByDate(LocalDate date);
 
     @Query("SELECT DISTINCT ws FROM WorkoutSession ws " +
             "LEFT JOIN FETCH ws.entries e " +
