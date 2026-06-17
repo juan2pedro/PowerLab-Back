@@ -64,11 +64,19 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           envs: GHCR_TOKEN,GHCR_USER
           script: |
+            set -e
             cd /opt/powerlab
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
             docker compose pull backend
             docker compose up -d backend
             docker image prune -f
+
+            echo "⏳ Verificando /actuator/health del backend..."
+            NET=$(docker network ls --format '{{.Name}}' | grep -m1 powerlab)
+            docker run --rm --network "$NET" curlimages/curl:latest \
+              --retry 15 --retry-delay 5 --retry-all-errors -fsS \
+              http://backend:8080/actuator/health -o /dev/null
+            echo "✅ backend healthy"
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GHCR_USER: ${{ github.actor }}
