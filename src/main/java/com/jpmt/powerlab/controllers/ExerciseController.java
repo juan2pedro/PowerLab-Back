@@ -4,7 +4,9 @@ import com.jpmt.powerlab.models.domain.MainPattern;
 import com.jpmt.powerlab.models.dto.ApiErrorResponse;
 import com.jpmt.powerlab.models.dto.exercise.ExerciseRequest;
 import com.jpmt.powerlab.models.dto.exercise.ExerciseResponse;
+import com.jpmt.powerlab.models.dto.exercise.LastExerciseResponse;
 import com.jpmt.powerlab.services.ExerciseService;
+import com.jpmt.powerlab.services.WorkoutService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -26,9 +28,11 @@ import java.util.List;
 public class ExerciseController {
 
     private final ExerciseService service;
+    private final WorkoutService workoutService;
 
-    public ExerciseController(ExerciseService service) {
+    public ExerciseController(ExerciseService service, WorkoutService workoutService) {
         this.service = service;
+        this.workoutService = workoutService;
     }
 
     @GetMapping()
@@ -66,6 +70,20 @@ public class ExerciseController {
     })
     public ResponseEntity<ExerciseResponse> findById(@Parameter(description = "ID del ejercicio") @PathVariable Long id) {
         return ResponseEntity.ok(service.findById(id));
+    }
+
+    @GetMapping("/{exerciseId}/last-set")
+    @Operation(summary = "Get last set of exercise", description = "Obtiene la última serie pesada registrada de un ejercicio específico")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Last set found",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = LastExerciseResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Exercise not found",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public ResponseEntity<LastExerciseResponse> findLastSetByExerciseId(@Parameter(description = "ID del ejercicio") @PathVariable Long exerciseId) {
+        return ResponseEntity.ok(workoutService.findLastSetByExerciseId(exerciseId));
     }
 
     @PostMapping
