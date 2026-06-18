@@ -8,7 +8,7 @@ public record TrainingSetTemplateResponse(
         Integer targetSets,
         Integer targetReps,
         Double targetWeight,
-        String targetIntensity,
+        Integer targetIntensity,
         IntensityType targetIntensityType,
         String rest,
         String notes,

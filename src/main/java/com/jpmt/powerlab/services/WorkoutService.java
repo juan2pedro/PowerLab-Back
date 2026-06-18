@@ -1,5 +1,6 @@
 package com.jpmt.powerlab.services;
 
+import com.jpmt.powerlab.models.dto.exercise.LastExerciseResponse;
 import com.jpmt.powerlab.models.dto.workoutentry.WorkoutEntryCreateRequest;
 import com.jpmt.powerlab.models.dto.workoutentry.WorkoutEntryResponse;
 import com.jpmt.powerlab.models.dto.workoutentry.WorkoutEntryUpdateRequest;
@@ -47,5 +48,9 @@ public interface WorkoutService {
     WorkoutSetResponse updateWorkoutSet(Long id, @Valid WorkoutSetRequest workoutSet);
 
     void deleteWorkoutSetById(Long id);
+
+    //last exercise performed
+    LastExerciseResponse findLastSetByExerciseId(Long exerciseId);
+
 
 }
