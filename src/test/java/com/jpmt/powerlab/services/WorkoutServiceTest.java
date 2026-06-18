@@ -173,7 +173,7 @@ class WorkoutServiceTest {
                 Collections.emptyList()
         );
 
-        when(workoutSessionRepository.findFullByDate(LocalDate.now())).thenReturn(Optional.of(workoutSession));
+        when(workoutSessionRepository.findFullByDate(LocalDate.now())).thenReturn(Collections.singletonList(workoutSession));
         when(templateRepository.findByIdOrderByDisplayOrder(1L)).thenReturn(Optional.of(template));
         when(workoutSessionMapper.toDayResponse(workoutSession)).thenReturn(expectedResponse);
 
@@ -235,7 +235,7 @@ class WorkoutServiceTest {
                 entry
         );
 
-        when(workoutSessionRepository.findFullByDate(LocalDate.now())).thenReturn(Optional.of(workoutSession));
+        when(workoutSessionRepository.findFullByDate(LocalDate.now())).thenReturn(Collections.singletonList(workoutSession));
         when(templateRepository.findByIdOrderByDisplayOrder(1L)).thenReturn(Optional.of(template));
         when(workoutSetRepository.findByWorkoutEntryIdIn(List.of(1L))).thenReturn(Collections.emptyList());
         when(workoutSessionMapper.toDayResponse(workoutSession)).thenReturn(expectedResponse);
@@ -254,7 +254,7 @@ class WorkoutServiceTest {
         List<WorkoutEntry> entries = Collections.emptyList();
         WorkoutSession workoutSession = WorkoutSession.builder().id(1L).date(LocalDate.now()).trainingSessionTemplate(template).entries(entries).build();
 
-        when(workoutSessionRepository.findFullByDate(LocalDate.now())).thenReturn(Optional.of(workoutSession));
+        when(workoutSessionRepository.findFullByDate(LocalDate.now())).thenReturn(Collections.singletonList(workoutSession));
         when(templateRepository.findByIdOrderByDisplayOrder(1L)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> workoutService.findFullDayByDate(LocalDate.now()));
