@@ -1,9 +1,6 @@
 package com.jpmt.powerlab.models.mappers;
 
-import com.jpmt.powerlab.models.domain.TrainingSessionTemplate;
-import com.jpmt.powerlab.models.domain.WorkoutEntry;
-import com.jpmt.powerlab.models.domain.WorkoutSession;
-import com.jpmt.powerlab.models.domain.WorkoutSet;
+import com.jpmt.powerlab.models.domain.*;
 import com.jpmt.powerlab.models.dto.workoutsession.WorkoutDayResponse;
 import com.jpmt.powerlab.models.dto.workoutsession.WorkoutSessionDetailResponse;
 import com.jpmt.powerlab.models.dto.workoutsession.WorkoutSessionRequest;
@@ -52,8 +49,12 @@ public interface WorkoutSessionMapper {
 
    @Mapping(source = "id", target = "entryId")
    @Mapping(source = "exercise", target = "exercise")
-   @Mapping(target = "target", ignore = true) // TODO: correlar con TrainingSetTemplate (FK directa o lookup exercise+order)
+   @Mapping(source = "sourceTemplate", target = "target")
    WorkoutDayResponse.Entry toEntry(WorkoutEntry entity);
+
+   @Mapping(source = "targetRepsMin", target = "targetReps")
+   @Mapping(source = "targetIntensityMin", target = "targetIntensityValue")
+   WorkoutDayResponse.Target toTarget(TrainingSetTemplate entity);
 
    @Mapping(source = "sequenceNumber", target = "sequenceNumber")
    WorkoutDayResponse.Set toSet(WorkoutSet entity);

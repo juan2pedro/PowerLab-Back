@@ -7,7 +7,6 @@ public enum IntensityType {
     RIR,
     RPE,
     PERCENTAGE;
-
     @JsonCreator
     public static IntensityType fromValue(String value) {
         if (value == null) return null;

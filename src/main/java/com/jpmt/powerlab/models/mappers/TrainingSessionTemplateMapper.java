@@ -10,7 +10,7 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 
 @Mapper(componentModel = "spring", uses = TrainingSetTemplateMapper.class, unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public abstract class TrainingSessionTemplateMapper {
+public interface TrainingSessionTemplateMapper  {
 
     @Mapping(source = "conjugatedDayType", target = "conjugatedDayType")
     @Mapping(source = "trainingSets", target = "setTemplates")

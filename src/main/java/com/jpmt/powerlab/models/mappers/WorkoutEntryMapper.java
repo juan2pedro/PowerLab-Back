@@ -13,18 +13,21 @@ import org.mapstruct.ReportingPolicy;
 public interface WorkoutEntryMapper {
     @Mapping(source = "session.id", target = "sessionId")
     @Mapping(source = "exercise.id", target = "exerciseId")
+    @Mapping(source = "sourceTemplate.id", target = "sourceTemplateId")
     WorkoutEntryResponse toResponse(WorkoutEntry dto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "sets", ignore = true)
     @Mapping(target = "session.id", source = "sessionId")
     @Mapping(target = "exercise.id", source = "exerciseId")
+    @Mapping(target = "sourceTemplate", ignore = true)
     WorkoutEntry toEntity(WorkoutEntryCreateRequest dto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "session", ignore = true)
     @Mapping(target = "exercise", ignore = true)
     @Mapping(target = "sets", ignore = true)
+    @Mapping(target = "sourceTemplate", ignore = true)
     void updateEntityFromRequest(
             WorkoutEntryUpdateRequest request,
             @MappingTarget WorkoutEntry entity

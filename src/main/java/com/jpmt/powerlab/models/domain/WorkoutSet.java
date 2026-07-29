@@ -1,12 +1,13 @@
 package com.jpmt.powerlab.models.domain;
 
-
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.*;
 
 import java.time.OffsetDateTime;
+import java.util.EnumSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "workout_set")
@@ -35,14 +36,18 @@ public class WorkoutSet {
     @Column(name = "weight")
     private Double weight;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "intensity_type")
-    private IntensityType intensityType;
-
-    @Column(name = "intensity_value")
+    @Column(name = "rpe_value")
     @Min(0)
     @Max(11)
-    private Integer intensityValue;
+    private Double rpeValue;
+
+    @ElementCollection(targetClass = Equipment.class)
+    @CollectionTable(name = "workout_set_equipment",
+            joinColumns = @JoinColumn(name = "workout_set_id"))
+    @Column(name = "equipment", length = 20)
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private Set<Equipment> usedEquipment = EnumSet.noneOf(Equipment.class);
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;

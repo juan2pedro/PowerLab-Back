@@ -19,6 +19,8 @@ public class WorkoutEntry {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private Integer displayOrder;
+
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "workout_session_id", nullable = false)
     private WorkoutSession session;
@@ -27,17 +29,9 @@ public class WorkoutEntry {
     @JoinColumn(name = "exercise_id", nullable = false)
     private Exercise exercise;
 
-    @Column(name = "actual_sets")
-    private Integer actualSets;
-    @Column(name = "actual_reps")
-    private Integer actualReps;
-    @Column(name = "actual_plate_weight")
-    private Double actualPlateWeight;
-    @Column(name = "actual_rir_or_rpe")
-    private String actualRirOrRpe;
-
-    @Column(name = "is_warmup")
-    private Boolean isWarmup;
+    @Column(name = "is_warmup", nullable = false)
+    @Builder.Default
+    private Boolean isWarmup = false;
 
     @Column(name = "notes", length = 500)
     private String notes;
@@ -46,4 +40,8 @@ public class WorkoutEntry {
     @OrderBy("sequenceNumber ASC")
     @Builder.Default
     private Set<WorkoutSet> sets = new LinkedHashSet<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "source_template_id")
+    private TrainingSetTemplate sourceTemplate;
 }

@@ -29,8 +29,12 @@ public class WorkoutSession {
     @JoinColumn(name = "training_session_template_id")
     private TrainingSessionTemplate trainingSessionTemplate;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", length = 20)
+    private Status status;
+
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("id ASC")
+    @OrderBy("displayOrder ASC")
     @Builder.Default
     private List<WorkoutEntry> entries = new ArrayList<>();
 

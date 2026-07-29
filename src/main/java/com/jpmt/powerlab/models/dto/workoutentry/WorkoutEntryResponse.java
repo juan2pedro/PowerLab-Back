@@ -4,11 +4,9 @@ public record WorkoutEntryResponse(
         Long id,
         Long sessionId,
         Long exerciseId,
-        Integer actualSets,
-        Integer actualReps,
-        Double actualPlateWeight,
-        String actualRirOrRpe,
+        Integer displayOrder,
         Boolean isWarmup,
-        String notes
+        String notes,
+        Long sourceTemplateId
 ) {
 }

@@ -6,5 +6,6 @@ public enum ConjugatedDayType {
     DE_UPPER,
     DE_LOWER,
     RE_UPPER,
-    RE_LOWER
+    RE_LOWER,
+    NONE
 }

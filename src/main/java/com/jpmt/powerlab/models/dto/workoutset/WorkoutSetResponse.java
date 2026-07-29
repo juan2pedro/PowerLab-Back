@@ -1,7 +1,5 @@
 package com.jpmt.powerlab.models.dto.workoutset;
 
-import com.jpmt.powerlab.models.domain.IntensityType;
-
 import java.time.OffsetDateTime;
 
 public record WorkoutSetResponse(
@@ -10,8 +8,7 @@ public record WorkoutSetResponse(
         Integer sequenceNumber,
         Integer reps,
         Double weight,
-        IntensityType intensityType,
-        Double intensityValue,
+        Double rpeValue,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
 ) {

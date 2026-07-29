@@ -5,7 +5,10 @@ public enum MainPattern {
     SQUAT,
     BENCH,
     DEADLIFT,
-    PRESS,
+    VERTICAL_PRESS,
+    HORIZONTAL_PRESS,
+    HORIZONTAL_PULL,
+    VERTICAL_PULL,
     OLY,
     ACCESSORY
 }

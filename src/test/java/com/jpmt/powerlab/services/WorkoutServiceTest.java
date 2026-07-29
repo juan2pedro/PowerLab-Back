@@ -51,7 +51,7 @@ class WorkoutServiceTest {
 
     @Test
     void saveWorkoutSessionWithOutTemplate() {
-        WorkoutSessionRequest sessionRequest = new WorkoutSessionRequest(LocalDate.now(), null);
+        WorkoutSessionRequest sessionRequest = new WorkoutSessionRequest(LocalDate.now(), null,Status.COMPLETED);
         WorkoutSession workoutSession = WorkoutSession.builder()
                 .id(1L)
                 .date(LocalDate.now())
@@ -76,7 +76,7 @@ class WorkoutServiceTest {
 
     @Test
     void saveWorkoutSessionWithTemplate() {
-        WorkoutSessionRequest sessionRequest = new WorkoutSessionRequest(LocalDate.now(), 1L);
+        WorkoutSessionRequest sessionRequest = new WorkoutSessionRequest(LocalDate.now(), 1L,Status.COMPLETED);
         WorkoutSession workoutSession = WorkoutSession.builder()
                 .id(1L)
                 .date(LocalDate.now())
@@ -105,7 +105,7 @@ class WorkoutServiceTest {
         TrainingSessionTemplate template = new TrainingSessionTemplate();
         template.setId(1L);
 
-        WorkoutSessionRequest sessionRequest = new WorkoutSessionRequest(LocalDate.now(), 1L);
+        WorkoutSessionRequest sessionRequest = new WorkoutSessionRequest(LocalDate.now(), 1L,Status.COMPLETED);
         WorkoutSession workoutSession = WorkoutSession.builder()
                 .id(1L)
                 .date(LocalDate.now())
@@ -151,8 +151,8 @@ class WorkoutServiceTest {
 
     @Test
     void findFullDayByDateWithoutEntries() {
-        List<TrainingSetTemplate> setTemplate = Collections.singletonList(TrainingSetTemplate.builder().id(1L).targetSets(5).targetReps(12).targetWeight(100.0).targetIntensity(80).targetIntensityType(IntensityType.PERCENTAGE).rest("2 min").notes("set notes").displayOrder(1).build());
-        TrainingSessionTemplate template = TrainingSessionTemplate.builder().id(1L).blockName("block name").weekNumber(1).dayInWeek(1).conjugatedDayType(ConjugatedDayType.ME_LOWER).notes("notess").trainingSets(setTemplate).build();
+        List<TrainingSetTemplate> setTemplate = Collections.singletonList(TrainingSetTemplate.builder().id(1L).targetSets(5).targetRepsMin(12).targetWeight(100.0).targetIntensityMax(80.00).targetIntensityType(IntensityType.PERCENTAGE).rest("2 min").notes("set notes").displayOrder(1).build());
+        TrainingSessionTemplate template = TrainingSessionTemplate.builder().id(1L).blockName("block name").weekNumber(1).dayIndex(1).conjugatedDayType(ConjugatedDayType.ME_LOWER).notes("notess").trainingSets(setTemplate).build();
         List<WorkoutEntry> entries = Collections.emptyList();
         WorkoutSession workoutSession = WorkoutSession.builder().id(1L).date(LocalDate.now()).trainingSessionTemplate(template).entries(entries).build();
 
@@ -186,9 +186,9 @@ class WorkoutServiceTest {
 
     @Test
     void findFullDayByDate() {
-        List<TrainingSetTemplate> setTemplate = Collections.singletonList(TrainingSetTemplate.builder().id(1L).targetSets(5).targetReps(12).targetWeight(100.0).targetIntensity(80).targetIntensityType(IntensityType.PERCENTAGE).rest("2 min").notes("set notes").displayOrder(1).build());
-        TrainingSessionTemplate template = TrainingSessionTemplate.builder().id(1L).blockName("block name").weekNumber(1).dayInWeek(1).conjugatedDayType(ConjugatedDayType.ME_LOWER).notes("notess").trainingSets(setTemplate).build();
-        List<WorkoutEntry> entries = Collections.singletonList(WorkoutEntry.builder().id(1L).actualSets(5).actualReps(12).actualPlateWeight(100.0).actualRirOrRpe("80").isWarmup(true).notes("entry notes").build());
+        List<TrainingSetTemplate> setTemplate = Collections.singletonList(TrainingSetTemplate.builder().id(1L).targetSets(5).targetRepsMin(12).targetWeight(100.0).targetIntensityMax(80.00).targetIntensityType(IntensityType.PERCENTAGE).rest("2 min").notes("set notes").displayOrder(1).build());
+        TrainingSessionTemplate template = TrainingSessionTemplate.builder().id(1L).blockName("block name").weekNumber(1).dayIndex(1).conjugatedDayType(ConjugatedDayType.ME_LOWER).notes("notess").trainingSets(setTemplate).build();
+        List<WorkoutEntry> entries = Collections.singletonList(WorkoutEntry.builder().id(1L).isWarmup(true).notes("entry notes").build());
         WorkoutSession workoutSession = WorkoutSession.builder().id(1L).date(LocalDate.now()).trainingSessionTemplate(template).entries(entries).build();
 
         WorkoutDayResponse.TemplateInfo templateInfo = new WorkoutDayResponse.TemplateInfo(
@@ -214,19 +214,17 @@ class WorkoutServiceTest {
                 null,
                 null,
                 null,
-                null,
-                null,
-                null,
-                null,
                 null
         );
         List<WorkoutDayResponse.Entry> entry = Collections.singletonList(new WorkoutDayResponse.Entry(
                 1L,
+                1,
                 exerciseResponse,
-                new WorkoutDayResponse.Target(5, 12, 100.0, "PERCENTAGE", "80", "2 min"),
+                new WorkoutDayResponse.Target(5, 12, 100.0, "PERCENTAGE", "80.0", "2 min"),
                 "entry notes",
                 true,
-                Collections.emptyList()
+                Collections.emptyList(),
+                setTemplate.get(0)
         ));
         WorkoutDayResponse expectedResponse = new WorkoutDayResponse(
                 1L,
@@ -249,14 +247,15 @@ class WorkoutServiceTest {
 
     @Test
     void findFullDayByDateThrowsWhenTemplateMissing() {
-        List<TrainingSetTemplate> setTemplate = Collections.singletonList(TrainingSetTemplate.builder().id(1L).targetSets(5).targetReps(12).targetWeight(100.0).targetIntensity(80).targetIntensityType(IntensityType.PERCENTAGE).rest("2 min").notes("set notes").displayOrder(1).build());
-        TrainingSessionTemplate template = TrainingSessionTemplate.builder().id(1L).blockName("block name").weekNumber(1).dayInWeek(1).conjugatedDayType(ConjugatedDayType.ME_LOWER).notes("notess").trainingSets(setTemplate).build();
+        List<TrainingSetTemplate> setTemplate = Collections.singletonList(TrainingSetTemplate.builder().id(1L).targetSets(5).targetRepsMin(12).targetWeight(100.0).targetIntensityMax(80.00).targetIntensityType(IntensityType.PERCENTAGE).rest("2 min").notes("set notes").displayOrder(1).build());
+        TrainingSessionTemplate template = TrainingSessionTemplate.builder().id(1L).blockName("block name").weekNumber(1).dayIndex(1).conjugatedDayType(ConjugatedDayType.ME_LOWER).notes("notess").trainingSets(setTemplate).build();
         List<WorkoutEntry> entries = Collections.emptyList();
-        WorkoutSession workoutSession = WorkoutSession.builder().id(1L).date(LocalDate.now()).trainingSessionTemplate(template).entries(entries).build();
+        LocalDate today = LocalDate.now();
+        WorkoutSession workoutSession = WorkoutSession.builder().id(1L).date(today).trainingSessionTemplate(template).entries(entries).build();
 
-        when(workoutSessionRepository.findFullByDate(LocalDate.now())).thenReturn(Collections.singletonList(workoutSession));
+        when(workoutSessionRepository.findFullByDate(today)).thenReturn(Collections.singletonList(workoutSession));
         when(templateRepository.findByIdOrderByDisplayOrder(1L)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> workoutService.findFullDayByDate(LocalDate.now()));
+        assertThrows(ResourceNotFoundException.class, () -> workoutService.findFullDayByDate(today));
     }
 }

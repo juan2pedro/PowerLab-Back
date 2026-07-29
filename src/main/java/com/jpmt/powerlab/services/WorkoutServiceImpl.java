@@ -36,6 +36,7 @@ public class WorkoutServiceImpl implements WorkoutService {
     private final WorkoutSessionRepository sessionRepository;
     private final WorkoutEntryRepository entryRepository;
     private final TrainingSessionTemplateRepository templateRepository;
+    private final TrainingSetTemplateRepository setTemplateRepository;
     private final ExerciseRepository exerciseRepository;
     private final WorkoutSetRepository workoutSetRepository;
     private final WorkoutSessionMapper workoutSessionMapper;
@@ -45,12 +46,14 @@ public class WorkoutServiceImpl implements WorkoutService {
     public WorkoutServiceImpl(WorkoutSessionRepository sessionRepository,
                               WorkoutEntryRepository entryRepository,
                               TrainingSessionTemplateRepository templateRepository,
+                              TrainingSetTemplateRepository setTemplateRepository,
                               ExerciseRepository exerciseRepository, WorkoutSetRepository workoutSetRepository,
                               WorkoutSessionMapper workoutSessionMapper,
                               WorkoutEntryMapper entryMapper, WorkoutSetMapper workoutSetMapper) {
         this.sessionRepository = sessionRepository;
         this.entryRepository = entryRepository;
         this.templateRepository = templateRepository;
+        this.setTemplateRepository = setTemplateRepository;
         this.exerciseRepository = exerciseRepository;
         this.workoutSetRepository = workoutSetRepository;
         this.workoutSessionMapper = workoutSessionMapper;
@@ -156,6 +159,12 @@ public class WorkoutServiceImpl implements WorkoutService {
         workoutEntry.setSession(session);
         workoutEntry.setExercise(exercise);
 
+        if (entryRequest.sourceTemplateId() != null) {
+            TrainingSetTemplate sourceTemplate = setTemplateRepository.findById(entryRequest.sourceTemplateId())
+                    .orElseThrow(() -> new ResourceNotFoundException("TrainingSetTemplate", "id", entryRequest.sourceTemplateId()));
+            workoutEntry.setSourceTemplate(sourceTemplate);
+        }
+
         WorkoutEntry saved = entryRepository.save(workoutEntry);
         return entryMapper.toResponse(saved);
     }
@@ -229,6 +238,8 @@ public class WorkoutServiceImpl implements WorkoutService {
                             .exercise(matchingSetTemplate.getExercise())
                             .isWarmup(false)
                             .notes(matchingSetTemplate.getNotes())
+                            .displayOrder(matchingSetTemplate.getDisplayOrder())
+                            .sourceTemplate(matchingSetTemplate)
                             .build();
                     WorkoutEntry saved = entryRepository.save(newEntry);
                     session.getEntries().add(saved);
@@ -240,8 +251,7 @@ public class WorkoutServiceImpl implements WorkoutService {
                 .sequenceNumber(request.sequenceNumber())
                 .reps(request.reps())
                 .weight(request.weight())
-                .intensityType(request.intensityType())
-                .intensityValue(request.intensityValue())
+                .rpeValue(request.rpeValue())
                 .build();
 
         WorkoutSet savedSet = workoutSetRepository.save(set);

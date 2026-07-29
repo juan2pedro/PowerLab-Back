@@ -43,38 +43,29 @@ public class Exercise {
     @Column(name = "grip", length = 30)
     private Grip grip;
 
-    @Column(name = "tempo", length = 20)
-    private String tempo;
-
-    @Column(name = "pause_seconds")
-    private Integer pauseSeconds;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "height_mode", length = 30)
     private HeightMode heightMode;
 
-    @Column(name = "height_length")
-    private Integer heightLength;
-
-    @Column(name = "style", length = 50)
-    private String style;
-
-    @Column(name = "bar", length = 50)
-    private String bar;
-
-    @Column(name = "resistance", length = 50)
-    private String resistance;
+    @Column(name = "height_value")
+    private Double heightValue;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "loading_method", length = 30)
-    private LoadingMethod loadingMethod;
+    @Column(name = "accommodating_resistance", length = 30)
+    private AccommodatingResistance accommodatingResistance;
+
+    @NotNull
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean unilateral = false;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "loading_unit", length = 10)
-    private LoadingUnit loadingUnit;
+    @Column(name = "measurement_type", length = 30)
+    private MeasurementType measurementType;
 
-    @Column(name = "equipment", length = 100)
-    private String equipment;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "load_mode", length = 30)
+    private LoadMode loadMode;
 
     @Column(name = "notes", length = 500)
     private String notes;

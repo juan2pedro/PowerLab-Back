@@ -15,6 +15,7 @@ import com.jpmt.powerlab.models.mappers.TrainingSetTemplateMapper;
 import com.jpmt.powerlab.repositories.ExerciseRepository;
 import com.jpmt.powerlab.repositories.TrainingSessionTemplateRepository;
 import com.jpmt.powerlab.repositories.TrainingSetTemplateRepository;
+import jakarta.validation.ValidationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,7 +50,7 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     @Transactional(readOnly = true)
     @Override
     public List<TrainingSessionTemplateSummaryResponse> findAllSessionByBlockNameAndWeekNumber(String blockName, Integer weekNumber) {
-        List<TrainingSessionTemplate> entities = sessionRepository.findByBlockNameAndWeekNumberOrderByDayInWeekAsc(blockName, weekNumber);
+        List<TrainingSessionTemplate> entities = sessionRepository.findByBlockNameAndWeekNumberOrderByDayIndexAsc(blockName, weekNumber);
         return entities.stream().map(sessionMapper::toSummaryResponse).toList();
     }
 
@@ -57,6 +58,7 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     @Override
     public TrainingSessionTemplateDetailResponse saveSession(TrainingSessionTemplateRequest request) {
         TrainingSessionTemplate entity = sessionMapper.toEntity(request);
+
         TrainingSessionTemplate saved = sessionRepository.save(entity);
         return sessionMapper.toDetailResponse(saved);
     }
@@ -92,18 +94,34 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     @Transactional
     @Override
     public TrainingSetTemplateResponse saveSet(Long sessionId, TrainingSetTemplateRequest request) {
+        if (!request.amrap() && request.targetRepsMin() == null) {
+            throw new ValidationException("targetRepsMin required when amrap=false");
+        }
+        if (request.targetRepsMin() != null && request.targetRepsMax() != null
+                && request.targetRepsMin() > request.targetRepsMax()) {
+            throw new ValidationException("targetRepsMin cannot be greater than targetRepsMax");
+        }
         TrainingSessionTemplate session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException(TSESSIONT, "id", sessionId));
 
-        Exercise exercise = exerciseRepository.findById(request.exerciseId())
-                .orElseThrow(() -> new ResourceNotFoundException("Exercise", "id", request.exerciseId()));
+            Exercise exercise = exerciseRepository.findById(request.exerciseId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Exercise", "id", request.exerciseId()));
 
-        TrainingSetTemplate setTemplate = setMapper.toEntity(request);
-        setTemplate.setSessionTemplate(session);
-        setTemplate.setExercise(exercise);
+            TrainingSetTemplate setTemplate = setMapper.toEntity(request);
+            setTemplate.setSessionTemplate(session);
+            setTemplate.setExercise(exercise);
+            setTemplate.setReferenceExercise(resolveReferenceExercise(request.referenceExerciseId()));
 
-        TrainingSetTemplate saved = setRepository.save(setTemplate);
-        return setMapper.toResponse(saved);
+            TrainingSetTemplate saved = setRepository.save(setTemplate);
+            return setMapper.toResponse(saved);
+        }
+
+    private Exercise resolveReferenceExercise(Long referenceExerciseId) {
+        if (referenceExerciseId == null) {
+            return null;
+        }
+        return exerciseRepository.findById(referenceExerciseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Exercise", "id", referenceExerciseId));
     }
 
     @Override
@@ -118,6 +136,9 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
             Exercise exercise = exerciseRepository.findById(request.exerciseId())
                     .orElseThrow(() -> new ResourceNotFoundException("Exercise", "id", request.exerciseId()));
             entity.setExercise(exercise);
+        }
+        if (request.referenceExerciseId() != null) {
+            entity.setReferenceExercise(resolveReferenceExercise(request.referenceExerciseId()));
         }
 
         TrainingSetTemplate saved = setRepository.save(entity);
