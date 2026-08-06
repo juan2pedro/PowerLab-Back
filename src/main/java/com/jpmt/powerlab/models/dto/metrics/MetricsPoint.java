@@ -5,6 +5,7 @@ public record MetricsPoint(
         int sets,
         int quantity,            // Σ reps/seg/m/pasos
         Double tonnage,          // null si no aplica (TIME, loadMode=NONE)
+        Double plannedTonnage,   // null si la sesión no tiene plantilla o la prescripción es por RPE/RIR
         Double avgLoad,
         Double peakLoad,
         int hardSets,
@@ -13,5 +14,5 @@ public record MetricsPoint(
         Double avgE1rm,
         boolean e1rmEstimated,   // banda presente y e1RM calculado igualmente
         Double avgRpe,
-        Double avgIntensityPct   // vs ReferenceMax provider
+        Double avgIntensityPct   // IMR ponderado por reps vs 1RM del levantamiento de competición
 ) {}

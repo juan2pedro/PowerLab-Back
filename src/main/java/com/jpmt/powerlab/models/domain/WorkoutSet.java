@@ -41,6 +41,11 @@ public class WorkoutSet {
     @Max(11)
     private Double rpeValue;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "set_type", nullable = false, length = 20)
+    @Builder.Default
+    private SetType type = SetType.WORKING;
+
     @ElementCollection(targetClass = Equipment.class)
     @CollectionTable(name = "workout_set_equipment",
             joinColumns = @JoinColumn(name = "workout_set_id"))

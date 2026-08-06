@@ -5,7 +5,6 @@ public record WorkoutEntryResponse(
         Long sessionId,
         Long exerciseId,
         Integer displayOrder,
-        Boolean isWarmup,
         String notes,
         Long sourceTemplateId
 ) {

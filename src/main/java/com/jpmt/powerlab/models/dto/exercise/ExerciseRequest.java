@@ -22,8 +22,6 @@ public record ExerciseRequest(
         HeightMode heightMode,
         Double heightValue,
         AccommodatingResistance accommodatingResistance,
-        Double bandBottom,
-        Double bandTop,
         Boolean unilateral,
         MeasurementType measurementType,
         LoadMode loadMode,

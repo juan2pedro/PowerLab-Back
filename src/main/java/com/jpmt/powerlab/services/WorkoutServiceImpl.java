@@ -24,10 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.Comparator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -223,20 +220,32 @@ public class WorkoutServiceImpl implements WorkoutService {
         TrainingSessionTemplate fullTemplate = templateRepository.findByIdOrderByDisplayOrder(templateId)
                 .orElseThrow(() -> new ResourceNotFoundException("TrainingSessionTemplate", "id", templateId));
 
-        TrainingSetTemplate matchingSetTemplate = fullTemplate.getTrainingSets().stream()
-                .filter(st -> st.getExercise() != null && request.exerciseId().equals(st.getExercise().getId()))
-                .findFirst()
-                .orElseThrow(() -> new BadRequestException(
-                        "exercise " + request.exerciseId() + " no planificado en este workout"));
+        TrainingSetTemplate matchingSetTemplate;
+        if (request.sourceTemplateId() != null) {
+            matchingSetTemplate = fullTemplate.getTrainingSets().stream()
+                    .filter(st -> request.sourceTemplateId().equals(st.getId()))
+                    .findFirst()
+                    .orElseThrow(() -> new BadRequestException(
+                            "sourceTemplateId " + request.sourceTemplateId() + " no pertenece a este workout"));
+        } else {
+            matchingSetTemplate = fullTemplate.getTrainingSets().stream()
+                    .filter(st -> st.getExercise() != null && request.exerciseId().equals(st.getExercise().getId()))
+                    .findFirst()
+                    .orElseThrow(() -> new BadRequestException(
+                            "exercise " + request.exerciseId() + " no planificado en este workout"));
+        }
 
+        final Long resolvedSourceTemplateId = matchingSetTemplate.getId();
         WorkoutEntry entry = session.getEntries().stream()
-                .filter(e -> e.getExercise() != null && request.exerciseId().equals(e.getExercise().getId()))
+                .filter(e -> e.getExercise() != null && request.exerciseId().equals(e.getExercise().getId())
+                        && Objects.equals(
+                                e.getSourceTemplate() != null ? e.getSourceTemplate().getId() : null,
+                                resolvedSourceTemplateId))
                 .findFirst()
                 .orElseGet(() -> {
                     WorkoutEntry newEntry = WorkoutEntry.builder()
                             .session(session)
                             .exercise(matchingSetTemplate.getExercise())
-                            .isWarmup(false)
                             .notes(matchingSetTemplate.getNotes())
                             .displayOrder(matchingSetTemplate.getDisplayOrder())
                             .sourceTemplate(matchingSetTemplate)
@@ -252,6 +261,7 @@ public class WorkoutServiceImpl implements WorkoutService {
                 .reps(request.reps())
                 .weight(request.weight())
                 .rpeValue(request.rpeValue())
+                .type(request.type() != null ? request.type() : SetType.WORKING)
                 .build();
 
         WorkoutSet savedSet = workoutSetRepository.save(set);

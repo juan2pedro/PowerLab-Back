@@ -10,7 +10,7 @@ public record TrainingSessionTemplateDetailResponse(
         Long id,
         String blockName,
         Integer weekNumber,
-        Integer dayInWeek,
+        Integer dayIndex,
         ConjugatedDayType conjugatedDayType,
         String notes,
         List<TrainingSetTemplateResponse> setTemplates

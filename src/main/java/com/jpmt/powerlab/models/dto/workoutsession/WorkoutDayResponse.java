@@ -1,5 +1,6 @@
 package com.jpmt.powerlab.models.dto.workoutsession;
 
+import com.jpmt.powerlab.models.domain.SetType;
 import com.jpmt.powerlab.models.domain.TrainingSetTemplate;
 import com.jpmt.powerlab.models.dto.exercise.ExerciseResponse;
 import com.jpmt.powerlab.models.dto.trainingsettemplate.TrainingSetTemplateResponse;
@@ -29,7 +30,6 @@ public record WorkoutDayResponse(
             ExerciseResponse exercise,
             Target target,          // opcional: si viene de template
             String notes,
-            Boolean isWarmup,
             List<Set> sets,
             TrainingSetTemplate sourceTemplate
     ) {}
@@ -49,6 +49,7 @@ public record WorkoutDayResponse(
             Integer reps,
             Double weight,
             Double rpeValue,
+            SetType type,
             String createdAt,
             String updatedAt
     ) {}

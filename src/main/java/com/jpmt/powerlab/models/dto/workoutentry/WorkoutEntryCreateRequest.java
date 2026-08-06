@@ -8,7 +8,6 @@ public record WorkoutEntryCreateRequest(
         @NotNull(message = "exerciseId is required")
         Long exerciseId,
         Integer displayOrder,
-        Boolean isWarmup,
         String notes,
         Long sourceTemplateId
 ) {

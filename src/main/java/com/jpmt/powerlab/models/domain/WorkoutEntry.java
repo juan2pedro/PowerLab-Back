@@ -29,10 +29,6 @@ public class WorkoutEntry {
     @JoinColumn(name = "exercise_id", nullable = false)
     private Exercise exercise;
 
-    @Column(name = "is_warmup", nullable = false)
-    @Builder.Default
-    private Boolean isWarmup = false;
-
     @Column(name = "notes", length = 500)
     private String notes;
 

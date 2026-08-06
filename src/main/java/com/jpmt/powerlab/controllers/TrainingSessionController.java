@@ -63,7 +63,7 @@ public class TrainingSessionController {
     })
     public ResponseEntity<List<TrainingSessionTemplateSummaryResponse>> findAllSessionByBlockNameAndWeekNumber(
             @Parameter(description = "Nombre del bloque de entrenamiento", required = true) @RequestParam String blockName,
-            @Parameter(description = "Número de semana (1-12)", required = true) @RequestParam Integer weekNumber) {
+            @Parameter(description = "Número de semana (>= 1)", required = true) @RequestParam Integer weekNumber) {
         List<TrainingSessionTemplateSummaryResponse> result = service.findAllSessionByBlockNameAndWeekNumber(blockName, weekNumber);
         return ResponseEntity.ok(result);
     }

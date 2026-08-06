@@ -21,6 +21,7 @@ public interface WorkoutSetMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(source = "sequenceNumber", target = "sequenceNumber")
+    @Mapping(source = "type", target = "type", defaultValue = "WORKING")
     WorkoutSet toEntity(WorkoutSetRequest request);
 
     @Mapping(target = "id", ignore = true)
@@ -28,6 +29,7 @@ public interface WorkoutSetMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(source = "sequenceNumber", target = "sequenceNumber")
+    @Mapping(source = "type", target = "type", defaultValue = "WORKING")
     void updateEntityFromRequest(WorkoutSetRequest request, @MappingTarget WorkoutSet entity);
 
     @Mapping(source = "workoutEntry.exercise.id", target = "exerciseId")
