@@ -1,5 +1,6 @@
 package com.jpmt.powerlab.services;
 
+import com.jpmt.powerlab.exceptions.BadRequestException;
 import com.jpmt.powerlab.exceptions.ResourceNotFoundException;
 import com.jpmt.powerlab.models.domain.Exercise;
 import com.jpmt.powerlab.models.domain.TrainingSessionTemplate;
@@ -15,7 +16,6 @@ import com.jpmt.powerlab.models.mappers.TrainingSetTemplateMapper;
 import com.jpmt.powerlab.repositories.ExerciseRepository;
 import com.jpmt.powerlab.repositories.TrainingSessionTemplateRepository;
 import com.jpmt.powerlab.repositories.TrainingSetTemplateRepository;
-import jakarta.validation.ValidationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -95,11 +95,11 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     @Override
     public TrainingSetTemplateResponse saveSet(Long sessionId, TrainingSetTemplateRequest request) {
         if (!request.amrap() && request.targetRepsMin() == null) {
-            throw new ValidationException("targetRepsMin required when amrap=false");
+            throw new BadRequestException("targetRepsMin required when amrap=false");
         }
         if (request.targetRepsMin() != null && request.targetRepsMax() != null
                 && request.targetRepsMin() > request.targetRepsMax()) {
-            throw new ValidationException("targetRepsMin cannot be greater than targetRepsMax");
+            throw new BadRequestException("targetRepsMin cannot be greater than targetRepsMax");
         }
         TrainingSessionTemplate session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException(TSESSIONT, "id", sessionId));
@@ -165,7 +165,7 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     @Transactional(readOnly = true)
     @Override
     public List<TrainingSetTemplateResponse> findBySessionIdWithExercise(Long sessionId) {
-        TrainingSessionTemplate session = sessionRepository.findById(sessionId)
+        TrainingSessionTemplate session = sessionRepository.findByIdOrderByDisplayOrder(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException(TSESSIONT, "id", sessionId));
 
         return session.getTrainingSets().stream()

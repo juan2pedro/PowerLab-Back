@@ -1,7 +1,6 @@
 package com.jpmt.powerlab.models.dto.workoutsession;
 
 import com.jpmt.powerlab.models.domain.SetType;
-import com.jpmt.powerlab.models.domain.TrainingSetTemplate;
 import com.jpmt.powerlab.models.dto.exercise.ExerciseResponse;
 import com.jpmt.powerlab.models.dto.trainingsettemplate.TrainingSetTemplateResponse;
 
@@ -31,7 +30,7 @@ public record WorkoutDayResponse(
             Target target,          // opcional: si viene de template
             String notes,
             List<Set> sets,
-            TrainingSetTemplate sourceTemplate
+            Long sourceTemplateId
     ) {}
 
     public record Target(

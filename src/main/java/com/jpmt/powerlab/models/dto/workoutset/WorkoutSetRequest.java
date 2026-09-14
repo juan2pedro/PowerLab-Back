@@ -1,7 +1,8 @@
 package com.jpmt.powerlab.models.dto.workoutset;
 
-import com.jpmt.powerlab.models.domain.Equipment;
+import com.jpmt.powerlab.models.domain.GearClass;
 import com.jpmt.powerlab.models.domain.SetType;
+import com.jpmt.powerlab.models.domain.SupportGear;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -20,7 +21,8 @@ public record WorkoutSetRequest(
         @Min(0)
         @Max(11)
         Double rpeValue,
-        Set<Equipment> usedEquipment,
+        GearClass gearClass,
+        Set<SupportGear> usedGear,
         SetType type
 ) {
 }

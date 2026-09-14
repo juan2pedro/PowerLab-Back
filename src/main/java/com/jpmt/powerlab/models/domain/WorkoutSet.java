@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
 import java.util.EnumSet;
@@ -46,13 +48,15 @@ public class WorkoutSet {
     @Builder.Default
     private SetType type = SetType.WORKING;
 
-    @ElementCollection(targetClass = Equipment.class)
-    @CollectionTable(name = "workout_set_equipment",
-            joinColumns = @JoinColumn(name = "workout_set_id"))
-    @Column(name = "equipment", length = 20)
     @Enumerated(EnumType.STRING)
+    @Column(name = "gear_class", length = 20)
+    private GearClass gearClass;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "used_gear", columnDefinition = "varchar(20)[]")
     @Builder.Default
-    private Set<Equipment> usedEquipment = EnumSet.noneOf(Equipment.class);
+    private Set<SupportGear> usedGear = EnumSet.noneOf(SupportGear.class);
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;

@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.util.EnumSet;
 import java.util.Set;
@@ -52,6 +54,10 @@ public class TrainingSetTemplate {
     @Column(name = "target_intensity_type")
     private IntensityType targetIntensityType;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "reference_slot_code", length = 10)
+    private SlotCode referenceSlotCode;
+
     @Min(0)
     @Max(100)
     @Column(name = "target_intensity_min")
@@ -76,13 +82,15 @@ public class TrainingSetTemplate {
     @Pattern(regexp = "\\d-\\d-[\\dX]-\\d")
     private String tempo;
 
-    @ElementCollection(targetClass = Equipment.class)
-    @CollectionTable(name = "training_set_template_equipment",
-            joinColumns = @JoinColumn(name = "training_set_template_id"))
-    @Column(name = "equipment", length = 20)
     @Enumerated(EnumType.STRING)
+    @Column(name = "prescribed_gear_class", length = 20)
+    private GearClass prescribedGearClass;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "prescribed_gear", columnDefinition = "varchar(20)[]")
     @Builder.Default
-    private Set<Equipment> prescribedEquipment = EnumSet.noneOf(Equipment.class);
+    private Set<SupportGear> prescribedGear = EnumSet.noneOf(SupportGear.class);
 
     @Column(name = "rest")
     private String rest;

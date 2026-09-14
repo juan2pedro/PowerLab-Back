@@ -102,8 +102,11 @@ public class WorkoutController {
             @Parameter(description = "Fecha en formato ISO 8601 (YYYY-MM-DD). Por defecto: hoy")
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         if (date == null) date = LocalDate.now();
-        WorkoutDayResponse day = workoutService.findFullDayByDate(date);
-        return ResponseEntity.ok(day);
+
+        return  workoutService.findFullDayByDate(date).map(
+                ResponseEntity::ok).orElseGet(() ->
+                 ResponseEntity.noContent().build());
+
     }
 
     @GetMapping("/{id}")

@@ -50,6 +50,7 @@ public interface WorkoutSessionMapper {
    @Mapping(source = "id", target = "entryId")
    @Mapping(source = "exercise", target = "exercise")
    @Mapping(source = "sourceTemplate", target = "target")
+   @Mapping(source = "sourceTemplate.id", target = "sourceTemplateId")
    WorkoutDayResponse.Entry toEntry(WorkoutEntry entity);
 
    @Mapping(source = "targetRepsMin", target = "targetReps")

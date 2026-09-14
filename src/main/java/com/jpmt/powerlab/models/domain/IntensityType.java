@@ -6,7 +6,10 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum IntensityType {
     RIR,
     RPE,
-    PERCENTAGE;
+    PERCENTAGE_1RM,
+    PERCENTAGE_ERM,
+    PERCENTAGE_DIALY_TOP;
+
     @JsonCreator
     public static IntensityType fromValue(String value) {
         if (value == null) return null;

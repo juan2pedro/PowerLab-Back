@@ -108,22 +108,40 @@ public class WorkoutServiceImpl implements WorkoutService {
 
     @Override
     @Transactional(readOnly = true)
-    public WorkoutDayResponse findFullDayByDate(LocalDate date) {
-          WorkoutSession session = sessionRepository.findFullByDate(date).stream().findFirst()
-                  .orElseThrow(() -> new ResourceNotFoundException("WorkoutSession", "date", date));
+    public Optional <WorkoutDayResponse> findFullDayByDate(LocalDate date) {
+
+        Optional<WorkoutSession> found = sessionRepository.findFullByDate(date).stream().findFirst();
+
+        if (found.isEmpty()) {
+            return Optional.empty();
+        }
+        WorkoutSession session = found.get();
         Long templateId = session.getTrainingSessionTemplate() != null ? session.getTrainingSessionTemplate().getId() : null;
 
-        return this.loadFullDay(session,templateId);
+        // If the workout references a template but the template can't be loaded, return empty (not found/204)
+        if (templateId != null && templateRepository.findByIdOrderByDisplayOrder(templateId).isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(loadFullDay(session, templateId));
 
     }
 
     @Override
     @Transactional(readOnly = true)
-    public WorkoutDayResponse findFullDayById(Long id) {
-        WorkoutSession session = sessionRepository.findHeaderById(id).orElseThrow(() -> new ResourceNotFoundException("WorkoutSession", "id", id));
+    public Optional<WorkoutDayResponse> findFullDayById(Long id) {
+        Optional<WorkoutSession> found = sessionRepository.findHeaderById(id);
+        if (found.isEmpty()){
+            return Optional.empty();
+        }
+        WorkoutSession session = found.get();
         Long templateId = session.getTrainingSessionTemplate() != null ? session.getTrainingSessionTemplate().getId() : null;
 
-        return loadFullDay(session,templateId);
+        if (templateId != null && templateRepository.findByIdOrderByDisplayOrder(templateId).isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(loadFullDay(session, templateId));
     }
 
     @Override
