@@ -77,7 +77,8 @@ public class MetricsController {
     @Operation(
             summary = "Récords personales",
             description = "Mejor peso, mejor e1RM y mejores marcas por número de repeticiones (1-10) por ejercicio. " +
-                    "Sin filtros, resuelve los tres levantamientos de competición del atleta."
+                    "Los intentos fallados (RPE > 10) no cuentan como récord: se devuelven aparte en " +
+                    "bestFailedSingle. Sin filtros, resuelve los tres levantamientos de competición del atleta."
     )
     @ApiResponses(value = {
             @ApiResponse(
@@ -110,7 +111,9 @@ public class MetricsController {
     @Operation(
             summary = "Resumen lúdico/social",
             description = "Total SBD y puntuaciones normalizadas (DOTS, IPF GL), consistencia (rachas, adherencia) " +
-                    "y tonelaje acumulado con hitos. La ventana de adherencia por defecto son los últimos 28 días."
+                    "y tonelaje acumulado con hitos. El total real suma los RM reales (mejor single conseguido) " +
+                    "de los tres movimientos y es null mientras falte alguno; DOTS e IPF GL lo siguen. " +
+                    "La ventana de adherencia por defecto son los últimos 28 días."
     )
     @ApiResponses(value = {
             @ApiResponse(

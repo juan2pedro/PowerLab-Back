@@ -22,6 +22,12 @@ public interface MetricsCalculator {
     boolean isFailedSet(WorkoutSet set);
 
     /**
+     * True si el set cuenta como levantamiento conseguido: tiene peso registrado y no fue un
+     * intento fallado. Un set sin RPE se considera válido.
+     */
+    boolean isValidLift(WorkoutSet set);
+
+    /**
      * True si la carga efectiva del set depende de un dato no medido directamente
      * (peso corporal o resistencia acomodada por bandas/cadenas).
      */

@@ -215,6 +215,26 @@ class MetricsCalculatorTest {
         assertTrue(calculator.isFailedSet(buildSet(100.0, 5, 10.5)));
     }
 
+    @Test
+    void validLift_atTen_isTrue() {
+        assertTrue(calculator.isValidLift(buildSet(100.0, 1, 10.0)));
+    }
+
+    @Test
+    void validLift_aboveTen_isFalse() {
+        assertFalse(calculator.isValidLift(buildSet(100.0, 1, 11.0)));
+    }
+
+    @Test
+    void validLift_withoutRpe_isTrue() {
+        assertTrue(calculator.isValidLift(buildSet(100.0, 1, null)));
+    }
+
+    @Test
+    void validLift_withoutWeight_isFalse() {
+        assertFalse(calculator.isValidLift(buildSet(null, 1, 8.0)));
+    }
+
     // ============================================================================
     // isEstimated
     // ============================================================================

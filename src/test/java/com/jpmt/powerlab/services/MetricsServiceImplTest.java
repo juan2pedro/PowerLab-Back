@@ -17,8 +17,7 @@ import java.time.temporal.ChronoField;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
@@ -64,13 +63,24 @@ class MetricsServiceImplTest {
         lenient().when(metricsCalculator.effectiveLoad(any(), any(), anyLong())).thenReturn(100.0);
         lenient().when(metricsCalculator.e1rm(any(), any(), anyLong())).thenReturn(null);
         lenient().when(metricsCalculator.isHardSet(any())).thenReturn(false);
-        lenient().when(metricsCalculator.isFailedSet(any())).thenReturn(false);
+        lenient().when(metricsCalculator.isFailedSet(any()))
+                .thenAnswer(inv -> failed(inv.getArgument(0)));
+        lenient().when(metricsCalculator.isValidLift(any()))
+                .thenAnswer(inv -> {
+                    WorkoutSet ws = inv.getArgument(0);
+                    return ws.getWeight() != null && !failed(ws);
+                });
         lenient().when(metricsCalculator.isEstimated(any(), any())).thenReturn(false);
     }
 
     // ============================================================================
     // Helpers de construcción de dominio
     // ============================================================================
+
+    /** Mismo criterio que MetricsCalculatorImpl: RPE > 10 es intento fallado. */
+    private static boolean failed(WorkoutSet set) {
+        return set.getRpeValue() != null && set.getRpeValue() > 10.0;
+    }
 
     private Exercise exercise(long id, String name, MainPattern pattern) {
         return Exercise.builder().id(id).baseName(name).mainPattern(pattern)
@@ -209,6 +219,25 @@ class MetricsServiceImplTest {
     }
 
     @Test
+    void personalRecords_failedAttempt_isNotARecord() {
+        Exercise exercise = exercise(1L, "Sentadilla", MainPattern.SQUAT);
+        WorkoutSession s1 = session(LocalDate.of(2024, 3, 1), null);
+        WorkoutSession s2 = session(LocalDate.of(2024, 3, 8), null);
+        WorkoutSet validSingle = set(entry(s1, exercise), 180.0, 1, 9.0);
+        WorkoutSet failedSingle = set(entry(s2, exercise), 200.0, 1, 11.0);
+
+        when(workoutSetRepository.findForMetrics(any(), any(), eq(List.of(1L)), isNull(), eq(SetFilter.WORKING_SETS.setTypes())))
+                .thenReturn(List.of(validSingle, failedSingle));
+
+        ExercisePrs prs = metricsService.personalRecords(null, null, List.of(1L), null).exercises().get(0);
+
+        assertEquals(180.0, prs.heaviestSet().weight());
+        assertEquals(180.0, prs.repMaxes().stream().filter(rm -> rm.reps() == 1).findFirst().orElseThrow().weight());
+        assertEquals(200.0, prs.bestFailedSingle().weight());
+        assertEquals(LocalDate.of(2024, 3, 8), prs.bestFailedSingle().date());
+    }
+
+    @Test
     void personalRecords_fromAfterTo_throwsBadRequest() {
         assertThrows(BadRequestException.class,
                 () -> metricsService.personalRecords(LocalDate.now(), LocalDate.now().minusDays(1), null, null));
@@ -254,6 +283,77 @@ class MetricsServiceImplTest {
         assertEquals(2, response.consistency().completedSessions());
         assertEquals(1, response.consistency().partialSessions());
         assertEquals(75.0, response.consistency().adherencePct());
+    }
+
+    /** Resuelve el movimiento por patrón (sin comp lift configurado) y luego por ejercicio. */
+    private void stubLift(MainPattern pattern, long exerciseId, List<WorkoutSet> sets) {
+        when(workoutSetRepository.findForMetrics(any(), any(), isNull(), eq(List.of(pattern)),
+                eq(SetFilter.WORKING_SETS.setTypes()))).thenReturn(sets);
+        when(workoutSetRepository.findForMetrics(any(), any(), eq(List.of(exerciseId)), isNull(),
+                eq(SetFilter.WORKING_SETS.setTypes()))).thenReturn(sets);
+    }
+
+    private List<WorkoutSet> liftSets(long exerciseId, String name, MainPattern pattern,
+                                       double singleWeight, double multiRepWeight) {
+        Exercise exercise = exercise(exerciseId, name, pattern);
+        WorkoutSession s = session(LocalDate.now().minusDays(7), null);
+        return List.of(set(entry(s, exercise), singleWeight, 1, 9.0),
+                set(entry(s, exercise), multiRepWeight, 5, 8.0));
+    }
+
+    @Test
+    void summary_sbd_realTotalSumsValidSinglesNotHeaviestSets() {
+        // El 5RM es más pesado que el single en los tres movimientos: no debe entrar en el total.
+        stubLift(MainPattern.SQUAT, 1L, liftSets(1L, "Sentadilla", MainPattern.SQUAT, 200.0, 210.0));
+        stubLift(MainPattern.BENCH, 2L, liftSets(2L, "Press banca", MainPattern.BENCH, 120.0, 130.0));
+        stubLift(MainPattern.DEADLIFT, 3L, liftSets(3L, "Peso muerto", MainPattern.DEADLIFT, 240.0, 250.0));
+        // Si DOTS se calculara sobre otro total, el stub quedaría sin usar y Mockito lo delataría.
+        when(metricsCalculator.dots(560.0, 88.5, Sex.MALE)).thenReturn(391.3);
+
+        SbdSummary sbd = metricsService.summary(null, null).sbd();
+
+        assertEquals(560.0, sbd.bestRealTotal());
+        LiftSummary squat = sbd.lifts().stream().filter(l -> l.lift() == MainPattern.SQUAT).findFirst().orElseThrow();
+        assertEquals(200.0, squat.bestSingle().weight());
+        assertEquals(210.0, squat.bestWeight());
+        assertNull(squat.bestFailedSingle());
+        assertEquals(391.3, sbd.dots());
+    }
+
+    @Test
+    void summary_sbd_failedSingleExcludedFromTotalAndBestWeight() {
+        Exercise squat = exercise(1L, "Sentadilla", MainPattern.SQUAT);
+        WorkoutSession s = session(LocalDate.now().minusDays(7), null);
+        List<WorkoutSet> squatSets = List.of(
+                set(entry(s, squat), 200.0, 1, 9.0),
+                set(entry(s, squat), 220.0, 1, 11.0));
+        stubLift(MainPattern.SQUAT, 1L, squatSets);
+        stubLift(MainPattern.BENCH, 2L, liftSets(2L, "Press banca", MainPattern.BENCH, 120.0, 110.0));
+        stubLift(MainPattern.DEADLIFT, 3L, liftSets(3L, "Peso muerto", MainPattern.DEADLIFT, 240.0, 230.0));
+
+        SbdSummary sbd = metricsService.summary(null, null).sbd();
+
+        LiftSummary squatSummary = sbd.lifts().stream()
+                .filter(l -> l.lift() == MainPattern.SQUAT).findFirst().orElseThrow();
+        assertEquals(200.0, squatSummary.bestSingle().weight());
+        assertEquals(200.0, squatSummary.bestWeight());
+        assertEquals(220.0, squatSummary.bestFailedSingle().weight());
+        assertEquals(560.0, sbd.bestRealTotal());
+    }
+
+    @Test
+    void summary_sbd_missingSingleInOneLift_leavesTotalAndScoresNull() {
+        Exercise deadlift = exercise(3L, "Peso muerto", MainPattern.DEADLIFT);
+        WorkoutSession s = session(LocalDate.now().minusDays(7), null);
+        stubLift(MainPattern.SQUAT, 1L, liftSets(1L, "Sentadilla", MainPattern.SQUAT, 200.0, 190.0));
+        stubLift(MainPattern.BENCH, 2L, liftSets(2L, "Press banca", MainPattern.BENCH, 120.0, 110.0));
+        stubLift(MainPattern.DEADLIFT, 3L, List.of(set(entry(s, deadlift), 240.0, 3, 8.0)));
+
+        SbdSummary sbd = metricsService.summary(null, null).sbd();
+
+        assertNull(sbd.bestRealTotal());
+        assertNull(sbd.dots());
+        assertNull(sbd.ipfGl());
     }
 
     @Test

@@ -8,5 +8,6 @@ public record ExercisePrs(
         PrSetInfo heaviestSet,
         Double bestE1rm,
         PrSetInfo bestE1rmSet,
+        PrSetInfo bestFailedSingle,
         List<RepMax> repMaxes
 ) {}

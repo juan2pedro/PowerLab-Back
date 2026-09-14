@@ -18,6 +18,7 @@ public interface MetricsService {
 
     /**
      * Récords personales (mejor peso, mejor e1RM, mejores marcas por número de reps) por ejercicio.
+     * Los intentos fallados (RPE &gt; 10) no cuentan como récord: se devuelven aparte.
      * Sin filtros, resuelve los tres levantamientos de competición del atleta.
      */
     PersonalRecordsResponse personalRecords(LocalDate from, LocalDate to,
@@ -26,6 +27,8 @@ public interface MetricsService {
     /**
      * Métricas lúdicas/sociales: total SBD y puntuaciones normalizadas (DOTS, IPF GL),
      * consistencia (rachas, adherencia) y tonelaje acumulado con hitos.
+     * El total real suma los RM reales (mejor single conseguido) de los tres movimientos, y es
+     * null mientras falte alguno; DOTS e IPF GL lo siguen.
      */
     MetricsSummaryResponse summary(LocalDate adherenceFrom, LocalDate adherenceTo);
 }

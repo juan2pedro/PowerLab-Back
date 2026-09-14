@@ -136,6 +136,11 @@ public class MetricsCalculatorImpl implements MetricsCalculator {
     }
 
     @Override
+    public boolean isValidLift(WorkoutSet set) {
+        return set.getWeight() != null && !isFailedSet(set);
+    }
+
+    @Override
     public boolean isEstimated(WorkoutSet set, Exercise exercise) {
         LoadMode loadMode = exercise.getLoadMode();
         boolean usesBodyweight = loadMode == LoadMode.BODYWEIGHT

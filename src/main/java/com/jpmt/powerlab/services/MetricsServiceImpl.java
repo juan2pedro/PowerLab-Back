@@ -15,6 +15,7 @@ import java.time.temporal.ChronoField;
 import java.time.temporal.IsoFields;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,6 +26,10 @@ public class MetricsServiceImpl implements MetricsService {
     private static final LocalDate EPOCH = LocalDate.of(1970, 1, 1);
     private static final int REP_MAX_UPPER_BOUND = 10;
     private static final int CONSISTENCY_WINDOW_WEEKS = 4;
+
+    /** Ante marcas iguales gana la más antigua: es cuando se consiguió el récord. */
+    private static final Comparator<WorkoutSet> BY_EARLIEST_DATE = Comparator.comparing(
+            (WorkoutSet ws) -> ws.getWorkoutEntry().getSession().getDate(), Comparator.reverseOrder());
 
     private final WorkoutSetRepository workoutSetRepository;
     private final WorkoutSessionRepository workoutSessionRepository;
@@ -328,14 +333,11 @@ public class MetricsServiceImpl implements MetricsService {
     private ExercisePrs buildExercisePrs(Long exerciseId, List<WorkoutSet> sets, Long athleteId) {
         Exercise exercise = sets.get(0).getWorkoutEntry().getExercise();
 
-        Comparator<WorkoutSet> byEarliestDate = Comparator.comparing(
-                (WorkoutSet ws) -> ws.getWorkoutEntry().getSession().getDate(), Comparator.reverseOrder());
-
         PrSetInfo heaviestSet = sets.stream()
-                .filter(ws -> ws.getWeight() != null)
+                .filter(metricsCalculator::isValidLift)
                 .max(Comparator.comparingDouble(WorkoutSet::getWeight)
                         .thenComparingInt(ws -> ws.getReps() == null ? 0 : ws.getReps())
-                        .thenComparing(byEarliestDate))
+                        .thenComparing(BY_EARLIEST_DATE))
                 .map(this::toPrSetInfo)
                 .orElse(null);
 
@@ -355,13 +357,38 @@ public class MetricsServiceImpl implements MetricsService {
         for (int reps = 1; reps <= REP_MAX_UPPER_BOUND; reps++) {
             int repsToMatch = reps;
             sets.stream()
-                    .filter(ws -> ws.getWeight() != null && ws.getReps() != null && ws.getReps() == repsToMatch)
-                    .max(Comparator.comparingDouble(WorkoutSet::getWeight).thenComparing(byEarliestDate))
+                    .filter(ws -> ws.getReps() != null && ws.getReps() == repsToMatch)
+                    .filter(metricsCalculator::isValidLift)
+                    .max(Comparator.comparingDouble(WorkoutSet::getWeight).thenComparing(BY_EARLIEST_DATE))
                     .ifPresent(ws -> repMaxes.add(new RepMax(repsToMatch, round1(ws.getWeight()),
                             ws.getWorkoutEntry().getSession().getDate())));
         }
 
-        return new ExercisePrs(exerciseId, exercise.getBaseName(), heaviestSet, roundedBestE1rm, bestE1rmSet, repMaxes);
+        return new ExercisePrs(exerciseId, exercise.getBaseName(), heaviestSet, roundedBestE1rm, bestE1rmSet,
+                bestFailedSingle(sets), repMaxes);
+    }
+
+    /**
+     * RM real: single más pesado conseguido. Null si nunca se ha hecho un single válido.
+     */
+    private PrSetInfo bestValidSingle(List<WorkoutSet> sets) {
+        return bestSingle(sets, metricsCalculator::isValidLift);
+    }
+
+    /**
+     * Single más pesado fallado (RPE &gt; 10). Marca el techo del atleta, no es un récord.
+     */
+    private PrSetInfo bestFailedSingle(List<WorkoutSet> sets) {
+        return bestSingle(sets, ws -> ws.getWeight() != null && metricsCalculator.isFailedSet(ws));
+    }
+
+    private PrSetInfo bestSingle(List<WorkoutSet> sets, Predicate<WorkoutSet> filter) {
+        return sets.stream()
+                .filter(ws -> ws.getReps() != null && ws.getReps() == 1)
+                .filter(filter)
+                .max(Comparator.comparingDouble(WorkoutSet::getWeight).thenComparing(BY_EARLIEST_DATE))
+                .map(this::toPrSetInfo)
+                .orElse(null);
     }
 
     private PrSetInfo toPrSetInfo(WorkoutSet ws) {
@@ -427,7 +454,9 @@ public class MetricsServiceImpl implements MetricsService {
             }
             Exercise exercise = sets.get(0).getWorkoutEntry().getExercise();
 
-            Double bestWeight = sets.stream().map(WorkoutSet::getWeight).filter(Objects::nonNull)
+            Double bestWeight = sets.stream()
+                    .filter(metricsCalculator::isValidLift)
+                    .map(WorkoutSet::getWeight)
                     .max(Double::compareTo).orElse(null);
             Double bestE1rm = sets.stream()
                     .map(ws -> metricsCalculator.e1rm(ws, exercise, athleteId))
@@ -439,10 +468,14 @@ public class MetricsServiceImpl implements MetricsService {
             lifts.add(new LiftSummary(lift, resolved.exerciseId(), exercise.getBaseName(), resolved.configured(),
                     bestWeight == null ? null : round1(bestWeight),
                     bestE1rm == null ? null : round1(bestE1rm),
-                    xBodyweight));
+                    xBodyweight,
+                    bestValidSingle(sets),
+                    bestFailedSingle(sets)));
         }
 
-        Double bestRealTotal = sumIfComplete(lifts, LiftSummary::bestWeight);
+        // DOTS e IPF GL solo tienen sentido sobre un total de singles conseguidos, no sobre el
+        // peso más alto movido a cualquier repetición.
+        Double bestRealTotal = sumIfComplete(lifts, l -> l.bestSingle() == null ? null : l.bestSingle().weight());
         Double bestE1rmTotal = sumIfComplete(lifts, LiftSummary::bestE1rm);
 
         Double dots = (bestRealTotal == null || bodyweightKg == null) ? null
