@@ -111,6 +111,10 @@ public class TrainingSetTemplate {
     @JoinColumn(name = "session_template_id")
     private TrainingSessionTemplate sessionTemplate;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "reference_source", length = 20)
+    private ReferenceSource referenceSource;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "exercise_id")
     private Exercise exercise;

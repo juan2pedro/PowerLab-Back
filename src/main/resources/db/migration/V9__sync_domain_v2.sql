@@ -25,14 +25,12 @@ ALTER TABLE training_set_template ADD CONSTRAINT training_set_template_reference
 
 -- Migracion defensiva: no hay filas con 'PERCENTAGE' en ningun entorno conocido (V3 solo
 -- siembra 'RIR'), pero el generico equivale al porcentaje sobre el 1RM.
-
-ALTER TABLE training_set_template DROP CONSTRAINT IF EXISTS training_set_template_target_intensity_type_check;
-
 UPDATE training_set_template
    SET target_intensity_type = 'PERCENTAGE_1RM'
  WHERE target_intensity_type = 'PERCENTAGE';
 
+ALTER TABLE training_set_template DROP CONSTRAINT IF EXISTS training_set_template_target_intensity_type_check;
 
 ALTER TABLE training_set_template ADD CONSTRAINT training_set_template_target_intensity_type_check
     CHECK (target_intensity_type IN ('RIR','RPE','PERCENTAGE_1RM','PERCENTAGE_ERM',
-                                   'PERCENTAGE_DIALY_TOP'));
+                                     'PERCENTAGE_REP_MAX','PERCENTAGE_DIALY_TOP'));

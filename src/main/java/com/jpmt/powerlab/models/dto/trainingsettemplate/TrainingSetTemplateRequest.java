@@ -1,9 +1,6 @@
 package com.jpmt.powerlab.models.dto.trainingsettemplate;
 
-import com.jpmt.powerlab.models.domain.GearClass;
-import com.jpmt.powerlab.models.domain.IntensityType;
-import com.jpmt.powerlab.models.domain.SlotCode;
-import com.jpmt.powerlab.models.domain.SupportGear;
+import com.jpmt.powerlab.models.domain.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -27,6 +24,7 @@ public record TrainingSetTemplateRequest(
         Double targetIntensityMax,
         IntensityType targetIntensityType,
         SlotCode referenceSlotCode,
+        ReferenceSource referenceSource,
         Integer targetResistanceTopPct,
         Integer targetResistanceBottomPct,
         @Pattern(regexp = "\\d-\\d-[\\dX]-\\d")

@@ -1,9 +1,6 @@
 package com.jpmt.powerlab.models.dto.trainingsettemplate;
 
-import com.jpmt.powerlab.models.domain.GearClass;
-import com.jpmt.powerlab.models.domain.IntensityType;
-import com.jpmt.powerlab.models.domain.SlotCode;
-import com.jpmt.powerlab.models.domain.SupportGear;
+import com.jpmt.powerlab.models.domain.*;
 import com.jpmt.powerlab.models.dto.exercise.ExerciseInfo;
 
 import java.util.Set;
@@ -20,6 +17,7 @@ public record TrainingSetTemplateResponse(
         Double targetIntensityMax,
         IntensityType targetIntensityType,
         SlotCode referenceSlotCode,
+        ReferenceSource referenceSource,
         Integer  targetResistanceTopPct,
         Integer targetResistanceBottomPct,
         String tempo,
