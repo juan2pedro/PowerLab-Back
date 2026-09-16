@@ -5,6 +5,7 @@ import com.jpmt.powerlab.exceptions.ResourceNotFoundException;
 import com.jpmt.powerlab.models.domain.Exercise;
 import com.jpmt.powerlab.models.domain.TrainingSessionTemplate;
 import com.jpmt.powerlab.models.domain.TrainingSetTemplate;
+import com.jpmt.powerlab.models.dto.trainingsessiontemplate.SetOrderRequest;
 import com.jpmt.powerlab.models.dto.trainingsessiontemplate.TrainingSessionTemplateDetailResponse;
 import com.jpmt.powerlab.models.dto.trainingsessiontemplate.TrainingSessionTemplateRequest;
 import com.jpmt.powerlab.models.dto.trainingsessiontemplate.TrainingSessionTemplateSummaryResponse;
@@ -20,6 +21,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 
 @Service
 public class TrainingSessionServiceImpl implements TrainingSessionService {
@@ -171,5 +176,23 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
         return session.getTrainingSets().stream()
                 .map(setMapper::toResponse)
                 .toList();
+    }
+
+    @Transactional
+    @Override
+    public void reorderSets(Long sessionId, List<SetOrderRequest> order) {
+        Map<Long, Integer> byId = order.stream()
+                .collect(toMap(SetOrderRequest::id, SetOrderRequest::displayOrder));
+
+        List<TrainingSetTemplate> sets = setRepository.findBySessionTemplateId(sessionId);
+
+        if (!sets.stream().map(TrainingSetTemplate::getId).collect(toSet()).containsAll(byId.keySet())) {
+            throw new BadRequestException("Algun set no pertenece a la sesion " + sessionId);
+        }
+
+        sets.forEach(s -> {
+            Integer newOrder = byId.get(s.getId());
+            if (newOrder != null) s.setDisplayOrder(newOrder);
+        });
     }
 }

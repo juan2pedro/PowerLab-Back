@@ -19,4 +19,6 @@ public interface TrainingSetTemplateRepository extends JpaRepository<TrainingSet
     """)
     List<TrainingSetTemplate> findBySessionTemplateIdIn(
             @Param("sessionTemplateIds") Collection<Long> sessionTemplateIds);
+
+    List<TrainingSetTemplate> findBySessionTemplateId(Long sessionId);
 }
