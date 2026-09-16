@@ -1,10 +1,12 @@
 package com.jpmt.powerlab.models.dto.metrics;
 
 import com.jpmt.powerlab.models.domain.SetType;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
+@Schema(enumAsRef = true)
 
 /**
  * Eje de <em>intención</em> del filtro de métricas: qué clase de series entran en el cálculo.
