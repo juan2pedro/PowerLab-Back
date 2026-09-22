@@ -3,11 +3,14 @@ package com.jpmt.powerlab.models.dto.workoutsession;
 import com.jpmt.powerlab.models.domain.SetType;
 import com.jpmt.powerlab.models.dto.exercise.ExerciseResponse;
 import com.jpmt.powerlab.models.dto.trainingsettemplate.TrainingSetTemplateResponse;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
 import java.util.List;
 
 public record WorkoutDayResponse(
+        @NotNull
         Long workoutId,
         LocalDate date,
         TemplateInfo template,
@@ -20,9 +23,10 @@ public record WorkoutDayResponse(
             Integer dayIndex,
             String conjugateDayType,
             String notes,
+            @NotNull
             List <TrainingSetTemplateResponse> setTemplates
     ) {}
-
+    @Schema(name = "WorkoutDayEntry")
     public record Entry(
             Long entryId,
             Integer displayOrder,
@@ -32,7 +36,7 @@ public record WorkoutDayResponse(
             List<Set> sets,
             Long sourceTemplateId
     ) {}
-
+    @Schema(name = "WorkoutDayTarget")
     public record Target(
             Integer targetSets,
             Integer targetReps,
@@ -41,7 +45,7 @@ public record WorkoutDayResponse(
             String targetIntensityValue,  // "8" o "2" o "75" (simple)
             String rest
     ) {}
-
+    @Schema(name = "WorkoutDaySet")
     public record Set(
             Long id,
             Integer sequenceNumber,
