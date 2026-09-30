@@ -1,6 +1,7 @@
 package com.jpmt.powerlab.models.dto.workoutsession;
 
 import com.jpmt.powerlab.models.domain.GearClass;
+import com.jpmt.powerlab.models.domain.IntensityType;
 import com.jpmt.powerlab.models.domain.SetType;
 import com.jpmt.powerlab.models.domain.SupportGear;
 import com.jpmt.powerlab.models.dto.exercise.ExerciseResponse;
@@ -10,13 +11,14 @@ import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 public record WorkoutDayResponse(
         @NotNull
         Long workoutId,
         LocalDate date,
         TemplateInfo template,
-        List<Entry> entries
+        List<WorkoutDayEntry> entries
 ) {
     public record TemplateInfo(
             Long id,
@@ -25,30 +27,28 @@ public record WorkoutDayResponse(
             Integer dayIndex,
             String conjugateDayType,
             String notes,
-            @NotNull
+            @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
             List <TrainingSetTemplateResponse> setTemplates
     ) {}
-    @Schema(name = "WorkoutDayEntry")
-    public record Entry(
+    public record WorkoutDayEntry(
             Long entryId,
             Integer displayOrder,
             ExerciseResponse exercise,
-            Target target,          // opcional: si viene de template
+            WorkoutDayTarget target,          // opcional: si viene de template
             String notes,
-            List<Set> sets,
+            List<WorkoutDaySet> sets,
             Long sourceTemplateId
     ) {}
-    @Schema(name = "WorkoutDayTarget")
-    public record Target(
+    public record WorkoutDayTarget(
             Integer targetSets,
             Integer targetReps,
             Double targetWeight,
-            String targetIntensityType,   // RIR/RPE/PERCENTAGE
-            String targetIntensityValue,  // "8" o "2" o "75" (simple)
+            IntensityType targetIntensityType,   // RIR/RPE/PERCENTAGE...
+            Double targetIntensityValue,  // "8" o "2" o "75" (simple)
             String rest
     ) {}
-    @Schema(name = "WorkoutDaySet")
-    public record Set(
+
+    public record WorkoutDaySet(
             Long id,
             Integer sequenceNumber,
             Integer reps,
@@ -56,7 +56,7 @@ public record WorkoutDayResponse(
             Double rpeValue,
             SetType type,
             GearClass gearClass,
-            SupportGear supportGear,
+            Set<SupportGear> usedGear,
             String createdAt,
             String updatedAt
     ) {}

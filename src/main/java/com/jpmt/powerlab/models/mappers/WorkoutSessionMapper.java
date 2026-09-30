@@ -51,14 +51,14 @@ public interface WorkoutSessionMapper {
    @Mapping(source = "exercise", target = "exercise")
    @Mapping(source = "sourceTemplate", target = "target")
    @Mapping(source = "sourceTemplate.id", target = "sourceTemplateId")
-   WorkoutDayResponse.Entry toEntry(WorkoutEntry entity);
+   WorkoutDayResponse.WorkoutDayEntry toEntry(WorkoutEntry entity);
 
    @Mapping(source = "targetRepsMin", target = "targetReps")
    @Mapping(source = "targetIntensityMin", target = "targetIntensityValue")
-   WorkoutDayResponse.Target toTarget(TrainingSetTemplate entity);
+   WorkoutDayResponse.WorkoutDayTarget toTarget(TrainingSetTemplate entity);
 
    @Mapping(source = "sequenceNumber", target = "sequenceNumber")
-   WorkoutDayResponse.Set toSet(WorkoutSet entity);
+   WorkoutDayResponse.WorkoutDaySet toSet(WorkoutSet entity);
 
    default String map(OffsetDateTime value) {
        return value != null ? value.toString() : null;

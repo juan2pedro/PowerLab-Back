@@ -226,7 +226,7 @@ public class WorkoutServiceImpl implements WorkoutService {
 
     @Transactional
     @Override
-    public WorkoutDayResponse.Entry addSetByExercise(Long workoutId, @Valid WorkoutSetWithExerciseRequest request) {
+    public WorkoutDayResponse.WorkoutDayEntry addSetByExercise(Long workoutId, @Valid WorkoutSetWithExerciseRequest request) {
         WorkoutSession session = sessionRepository.findHeaderById(workoutId)
                 .orElseThrow(() -> new ResourceNotFoundException("WorkoutSession", "id", workoutId));
 

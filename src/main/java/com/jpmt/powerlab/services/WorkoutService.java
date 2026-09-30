@@ -44,7 +44,7 @@ public interface WorkoutService {
 
     WorkoutSetResponse saveWorkoutSet(Long entryId, @Valid WorkoutSetRequest workoutSet);
 
-    WorkoutDayResponse.Entry addSetByExercise(Long workoutId, @Valid WorkoutSetWithExerciseRequest request);
+    WorkoutDayResponse.WorkoutDayEntry addSetByExercise(Long workoutId, @Valid WorkoutSetWithExerciseRequest request);
 
     WorkoutSetResponse updateWorkoutSet(Long id, @Valid WorkoutSetRequest workoutSet);
 
