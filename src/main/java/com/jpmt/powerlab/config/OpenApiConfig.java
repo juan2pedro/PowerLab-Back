@@ -28,7 +28,7 @@ public class OpenApiConfig {
                 ))
                 .info(new Info()
                         .title("PowerLab API")
-                        .version("1.0.0")
+                        .version("1.2.0")
                         .description("""
                                 API REST de **PowerLab**, plataforma de gestión de entrenamiento de fuerza.
 

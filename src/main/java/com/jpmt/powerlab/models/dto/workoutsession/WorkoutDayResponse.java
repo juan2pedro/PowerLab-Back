@@ -1,52 +1,62 @@
 package com.jpmt.powerlab.models.dto.workoutsession;
 
+import com.jpmt.powerlab.models.domain.GearClass;
+import com.jpmt.powerlab.models.domain.IntensityType;
+import com.jpmt.powerlab.models.domain.SetType;
+import com.jpmt.powerlab.models.domain.SupportGear;
 import com.jpmt.powerlab.models.dto.exercise.ExerciseResponse;
 import com.jpmt.powerlab.models.dto.trainingsettemplate.TrainingSetTemplateResponse;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 public record WorkoutDayResponse(
+        @NotNull
         Long workoutId,
         LocalDate date,
         TemplateInfo template,
-        List<Entry> entries
+        List<WorkoutDayEntry> entries
 ) {
     public record TemplateInfo(
             Long id,
             String blockName,
             Integer weekNumber,
-            Integer dayInWeek,
+            Integer dayIndex,
             String conjugateDayType,
             String notes,
+            @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
             List <TrainingSetTemplateResponse> setTemplates
     ) {}
-
-    public record Entry(
+    public record WorkoutDayEntry(
             Long entryId,
+            Integer displayOrder,
             ExerciseResponse exercise,
-            Target target,          // opcional: si viene de template
+            WorkoutDayTarget target,          // opcional: si viene de template
             String notes,
-            Boolean isWarmup,
-            List<Set> sets
+            List<WorkoutDaySet> sets,
+            Long sourceTemplateId
     ) {}
-
-    public record Target(
+    public record WorkoutDayTarget(
             Integer targetSets,
             Integer targetReps,
             Double targetWeight,
-            String targetIntensityType,   // RIR/RPE/PERCENTAGE
-            String targetIntensityValue,  // "8" o "2" o "75" (simple)
+            IntensityType targetIntensityType,   // RIR/RPE/PERCENTAGE...
+            Double targetIntensityValue,  // "8" o "2" o "75" (simple)
             String rest
     ) {}
 
-    public record Set(
+    public record WorkoutDaySet(
             Long id,
             Integer sequenceNumber,
             Integer reps,
             Double weight,
-            String intensityType,   // RIR/RPE/PERCENTAGE
-            Double intensityValue,
+            Double rpeValue,
+            SetType type,
+            GearClass gearClass,
+            Set<SupportGear> usedGear,
             String createdAt,
             String updatedAt
     ) {}

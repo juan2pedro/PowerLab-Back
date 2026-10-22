@@ -15,6 +15,7 @@ import jakarta.validation.Valid;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface WorkoutService {
     // workoutSessions
@@ -27,9 +28,9 @@ public interface WorkoutService {
     WorkoutSessionDetailResponse findWorkoutById(Long id);
 
     void deleteWorkoutById(Long id);
-    WorkoutDayResponse findFullDayById(Long id);
+   Optional < WorkoutDayResponse> findFullDayById(Long id);
 
-    WorkoutDayResponse findFullDayByDate(LocalDate date);
+   Optional< WorkoutDayResponse> findFullDayByDate(LocalDate date);
 
     // workoutEntries
     WorkoutEntryResponse saveWorkoutEntry(WorkoutEntryCreateRequest entry);
@@ -43,7 +44,7 @@ public interface WorkoutService {
 
     WorkoutSetResponse saveWorkoutSet(Long entryId, @Valid WorkoutSetRequest workoutSet);
 
-    WorkoutDayResponse.Entry addSetByExercise(Long workoutId, @Valid WorkoutSetWithExerciseRequest request);
+    WorkoutDayResponse.WorkoutDayEntry addSetByExercise(Long workoutId, @Valid WorkoutSetWithExerciseRequest request);
 
     WorkoutSetResponse updateWorkoutSet(Long id, @Valid WorkoutSetRequest workoutSet);
 

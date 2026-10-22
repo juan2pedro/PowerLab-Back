@@ -1,6 +1,7 @@
 package com.jpmt.powerlab.controllers;
 
 import com.jpmt.powerlab.models.dto.ApiErrorResponse;
+import com.jpmt.powerlab.models.dto.trainingsessiontemplate.SetOrderRequest;
 import com.jpmt.powerlab.models.dto.trainingsessiontemplate.TrainingSessionTemplateDetailResponse;
 import com.jpmt.powerlab.models.dto.trainingsessiontemplate.TrainingSessionTemplateRequest;
 import com.jpmt.powerlab.models.dto.trainingsessiontemplate.TrainingSessionTemplateSummaryResponse;
@@ -63,7 +64,7 @@ public class TrainingSessionController {
     })
     public ResponseEntity<List<TrainingSessionTemplateSummaryResponse>> findAllSessionByBlockNameAndWeekNumber(
             @Parameter(description = "Nombre del bloque de entrenamiento", required = true) @RequestParam String blockName,
-            @Parameter(description = "Número de semana (1-12)", required = true) @RequestParam Integer weekNumber) {
+            @Parameter(description = "Número de semana (>= 1)", required = true) @RequestParam Integer weekNumber) {
         List<TrainingSessionTemplateSummaryResponse> result = service.findAllSessionByBlockNameAndWeekNumber(blockName, weekNumber);
         return ResponseEntity.ok(result);
     }
@@ -263,6 +264,13 @@ public class TrainingSessionController {
             @Parameter(description = "ID de la sesión (contexto)") @PathVariable Long sessionId,
             @Parameter(description = "ID de la plantilla de set") @PathVariable Long setId) {
         this.service.deleteSetById(setId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{sessionId}/sets/order")
+    public ResponseEntity<Void> reorderSets(@PathVariable Long sessionId,
+                                            @RequestBody @Valid List<SetOrderRequest> order) {
+        this.service.reorderSets(sessionId, order);
         return ResponseEntity.noContent().build();
     }
 }

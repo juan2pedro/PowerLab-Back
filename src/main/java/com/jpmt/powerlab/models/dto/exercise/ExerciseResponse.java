@@ -13,16 +13,12 @@ public record ExerciseResponse(
         Setup setup,
         Stance stance,
         Grip grip,
-        String tempo,
-        Integer pauseSeconds,
         HeightMode heightMode,
-        Integer heightLength,
-        String style,
-        String bar,
-        String resistance,
-        LoadingMethod loadingMethod,
-        LoadingUnit loadingUnit,
-        String equipment,
+        Double heightValue,
+        AccommodatingResistance accommodatingResistance,
+        Boolean unilateral,
+        MeasurementType measurementType,
+        LoadMode loadMode,
         String notes
 ) {
 }

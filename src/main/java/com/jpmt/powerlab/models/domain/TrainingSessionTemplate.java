@@ -34,8 +34,8 @@ public class TrainingSessionTemplate {
     @NotNull
     @Min(1)
     @Max(7)
-    @Column(name = "day_in_week")
-    private Integer dayInWeek;
+    @Column(name = "day_index")
+    private Integer dayIndex;
 
     @NotNull
     @Enumerated(EnumType.STRING)

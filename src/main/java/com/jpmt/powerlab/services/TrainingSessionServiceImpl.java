@@ -1,9 +1,11 @@
 package com.jpmt.powerlab.services;
 
+import com.jpmt.powerlab.exceptions.BadRequestException;
 import com.jpmt.powerlab.exceptions.ResourceNotFoundException;
 import com.jpmt.powerlab.models.domain.Exercise;
 import com.jpmt.powerlab.models.domain.TrainingSessionTemplate;
 import com.jpmt.powerlab.models.domain.TrainingSetTemplate;
+import com.jpmt.powerlab.models.dto.trainingsessiontemplate.SetOrderRequest;
 import com.jpmt.powerlab.models.dto.trainingsessiontemplate.TrainingSessionTemplateDetailResponse;
 import com.jpmt.powerlab.models.dto.trainingsessiontemplate.TrainingSessionTemplateRequest;
 import com.jpmt.powerlab.models.dto.trainingsessiontemplate.TrainingSessionTemplateSummaryResponse;
@@ -19,6 +21,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 
 @Service
 public class TrainingSessionServiceImpl implements TrainingSessionService {
@@ -30,13 +36,15 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     private final ExerciseRepository exerciseRepository;
     private final TrainingSessionTemplateMapper sessionMapper;
     private final TrainingSetTemplateMapper setMapper;
+    private final PrescribedWeightResolver prescribedWeightResolver;
 
-    public TrainingSessionServiceImpl(TrainingSessionTemplateRepository sessionRepository, TrainingSetTemplateRepository setRepository, ExerciseRepository exerciseRepository, TrainingSessionTemplateMapper sessionMapper, TrainingSetTemplateMapper setMapper) {
+    public TrainingSessionServiceImpl(TrainingSessionTemplateRepository sessionRepository, TrainingSetTemplateRepository setRepository, ExerciseRepository exerciseRepository, TrainingSessionTemplateMapper sessionMapper, TrainingSetTemplateMapper setMapper, PrescribedWeightResolver prescribedWeightResolver) {
         this.sessionRepository = sessionRepository;
         this.setRepository = setRepository;
         this.exerciseRepository = exerciseRepository;
         this.sessionMapper = sessionMapper;
         this.setMapper = setMapper;
+        this.prescribedWeightResolver = prescribedWeightResolver;
     }
 
     @Transactional(readOnly = true)
@@ -49,7 +57,7 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     @Transactional(readOnly = true)
     @Override
     public List<TrainingSessionTemplateSummaryResponse> findAllSessionByBlockNameAndWeekNumber(String blockName, Integer weekNumber) {
-        List<TrainingSessionTemplate> entities = sessionRepository.findByBlockNameAndWeekNumberOrderByDayInWeekAsc(blockName, weekNumber);
+        List<TrainingSessionTemplate> entities = sessionRepository.findByBlockNameAndWeekNumberOrderByDayIndexAsc(blockName, weekNumber);
         return entities.stream().map(sessionMapper::toSummaryResponse).toList();
     }
 
@@ -57,8 +65,9 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     @Override
     public TrainingSessionTemplateDetailResponse saveSession(TrainingSessionTemplateRequest request) {
         TrainingSessionTemplate entity = sessionMapper.toEntity(request);
+
         TrainingSessionTemplate saved = sessionRepository.save(entity);
-        return sessionMapper.toDetailResponse(saved);
+        return sessionMapper.toDetailResponse(saved,Map.of());
     }
 
     @Override
@@ -69,7 +78,7 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
 
         sessionMapper.updateEntityFromRequest(request, entity);
         TrainingSessionTemplate saved = sessionRepository.save(entity);
-        return sessionMapper.toDetailResponse(saved);
+        return sessionMapper.toDetailResponse(saved, Map.of());
     }
 
     @Transactional
@@ -86,24 +95,41 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     public TrainingSessionTemplateDetailResponse findSessionById(Long id) {
         TrainingSessionTemplate entity = sessionRepository.findByIdOrderByDisplayOrder(id)
                 .orElseThrow(() -> new ResourceNotFoundException(TSESSIONT, "id", id));
-        return sessionMapper.toDetailResponse(entity);
+
+        return sessionMapper.toDetailResponse(entity, prescribedWeightResolver.resolveAll(entity.getTrainingSets(), 1L));
     }
 
     @Transactional
     @Override
     public TrainingSetTemplateResponse saveSet(Long sessionId, TrainingSetTemplateRequest request) {
+        if (!request.amrap() && request.targetRepsMin() == null) {
+            throw new BadRequestException("targetRepsMin required when amrap=false");
+        }
+        if (request.targetRepsMin() != null && request.targetRepsMax() != null
+                && request.targetRepsMin() > request.targetRepsMax()) {
+            throw new BadRequestException("targetRepsMin cannot be greater than targetRepsMax");
+        }
         TrainingSessionTemplate session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException(TSESSIONT, "id", sessionId));
 
-        Exercise exercise = exerciseRepository.findById(request.exerciseId())
-                .orElseThrow(() -> new ResourceNotFoundException("Exercise", "id", request.exerciseId()));
+            Exercise exercise = exerciseRepository.findById(request.exerciseId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Exercise", "id", request.exerciseId()));
 
-        TrainingSetTemplate setTemplate = setMapper.toEntity(request);
-        setTemplate.setSessionTemplate(session);
-        setTemplate.setExercise(exercise);
+            TrainingSetTemplate setTemplate = setMapper.toEntity(request);
+            setTemplate.setSessionTemplate(session);
+            setTemplate.setExercise(exercise);
+            setTemplate.setReferenceExercise(resolveReferenceExercise(request.referenceExerciseId()));
 
-        TrainingSetTemplate saved = setRepository.save(setTemplate);
-        return setMapper.toResponse(saved);
+            TrainingSetTemplate saved = setRepository.save(setTemplate);
+            return setMapper.toResponse(saved);
+        }
+
+    private Exercise resolveReferenceExercise(Long referenceExerciseId) {
+        if (referenceExerciseId == null) {
+            return null;
+        }
+        return exerciseRepository.findById(referenceExerciseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Exercise", "id", referenceExerciseId));
     }
 
     @Override
@@ -118,6 +144,9 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
             Exercise exercise = exerciseRepository.findById(request.exerciseId())
                     .orElseThrow(() -> new ResourceNotFoundException("Exercise", "id", request.exerciseId()));
             entity.setExercise(exercise);
+        }
+        if (request.referenceExerciseId() != null) {
+            entity.setReferenceExercise(resolveReferenceExercise(request.referenceExerciseId()));
         }
 
         TrainingSetTemplate saved = setRepository.save(entity);
@@ -144,11 +173,30 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     @Transactional(readOnly = true)
     @Override
     public List<TrainingSetTemplateResponse> findBySessionIdWithExercise(Long sessionId) {
-        TrainingSessionTemplate session = sessionRepository.findById(sessionId)
+        TrainingSessionTemplate session = sessionRepository.findByIdOrderByDisplayOrder(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException(TSESSIONT, "id", sessionId));
 
         return session.getTrainingSets().stream()
                 .map(setMapper::toResponse)
                 .toList();
     }
+
+    @Transactional
+    @Override
+    public void reorderSets(Long sessionId, List<SetOrderRequest> order) {
+        Map<Long, Integer> byId = order.stream()
+                .collect(toMap(SetOrderRequest::id, SetOrderRequest::displayOrder));
+
+        List<TrainingSetTemplate> sets = setRepository.findBySessionTemplateId(sessionId);
+
+        if (!sets.stream().map(TrainingSetTemplate::getId).collect(toSet()).containsAll(byId.keySet())) {
+            throw new BadRequestException("Algun set no pertenece a la sesion " + sessionId);
+        }
+
+        sets.forEach(s -> {
+            Integer newOrder = byId.get(s.getId());
+            if (newOrder != null) s.setDisplayOrder(newOrder);
+        });
+    }
 }
+

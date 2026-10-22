@@ -21,6 +21,7 @@ public interface WorkoutSetMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(source = "sequenceNumber", target = "sequenceNumber")
+    @Mapping(source = "type", target = "type", defaultValue = "WORKING")
     WorkoutSet toEntity(WorkoutSetRequest request);
 
     @Mapping(target = "id", ignore = true)
@@ -28,12 +29,13 @@ public interface WorkoutSetMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(source = "sequenceNumber", target = "sequenceNumber")
+    @Mapping(source = "type", target = "type", defaultValue = "WORKING")
     void updateEntityFromRequest(WorkoutSetRequest request, @MappingTarget WorkoutSet entity);
 
     @Mapping(source = "workoutEntry.exercise.id", target = "exerciseId")
     @Mapping(source = "weight", target = "weight")
     @Mapping(source = "reps", target = "reps")
-    @Mapping(source = "intensityValue", target = "rpe")
+    @Mapping(source = "rpeValue", target = "rpe")
     @Mapping(source = "workoutEntry.session.date", target = "performedAt")
     @Mapping(source = "workoutEntry.session.id", target = "workoutSessionId")
     LastExerciseResponse toLastExerciseResponse(WorkoutSet workoutSet);
@@ -46,7 +48,7 @@ public interface WorkoutSetMapper {
                 workoutSet.getWorkoutEntry().getExercise().getId(),
                 workoutSet.getWeight(),
                 workoutSet.getReps(),
-                workoutSet.getIntensityValue(),
+                workoutSet.getRpeValue(),
                 workoutSet.getWorkoutEntry().getSession().getDate(),
                 workoutSet.getWorkoutEntry().getSession().getId()
         );

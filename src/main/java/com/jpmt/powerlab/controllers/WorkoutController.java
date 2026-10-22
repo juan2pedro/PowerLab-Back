@@ -102,8 +102,11 @@ public class WorkoutController {
             @Parameter(description = "Fecha en formato ISO 8601 (YYYY-MM-DD). Por defecto: hoy")
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         if (date == null) date = LocalDate.now();
-        WorkoutDayResponse day = workoutService.findFullDayByDate(date);
-        return ResponseEntity.ok(day);
+
+        return  workoutService.findFullDayByDate(date).map(
+                ResponseEntity::ok).orElseGet(() ->
+                 ResponseEntity.noContent().build());
+
     }
 
     @GetMapping("/{id}")
@@ -385,7 +388,7 @@ public class WorkoutController {
                     responseCode = "201",
                     description = "Set creado exitosamente (entry creada si no existía)",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = WorkoutDayResponse.Entry.class))
+                            schema = @Schema(implementation = WorkoutDayResponse.WorkoutDayEntry.class))
             ),
             @ApiResponse(
                     responseCode = "400",
@@ -400,10 +403,10 @@ public class WorkoutController {
                             schema = @Schema(implementation = ApiErrorResponse.class))
             )
     })
-    public ResponseEntity<WorkoutDayResponse.Entry> addWorkoutSetByExercise(
+    public ResponseEntity<WorkoutDayResponse.WorkoutDayEntry> addWorkoutSetByExercise(
             @Parameter(description = "ID del workout") @PathVariable Long workoutId,
             @Valid @RequestBody WorkoutSetWithExerciseRequest request) {
-        WorkoutDayResponse.Entry entry = workoutService.addSetByExercise(workoutId, request);
+        WorkoutDayResponse.WorkoutDayEntry entry = workoutService.addSetByExercise(workoutId, request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{entryId}")
                 .buildAndExpand(entry.entryId())

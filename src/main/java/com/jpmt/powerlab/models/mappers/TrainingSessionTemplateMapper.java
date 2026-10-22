@@ -4,17 +4,17 @@ import com.jpmt.powerlab.models.domain.TrainingSessionTemplate;
 import com.jpmt.powerlab.models.dto.trainingsessiontemplate.TrainingSessionTemplateDetailResponse;
 import com.jpmt.powerlab.models.dto.trainingsessiontemplate.TrainingSessionTemplateRequest;
 import com.jpmt.powerlab.models.dto.trainingsessiontemplate.TrainingSessionTemplateSummaryResponse;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.ReportingPolicy;
+import com.jpmt.powerlab.services.PrescribedWeightResolver.ResolvedPrescription;
+import org.mapstruct.*;
 
-@Mapper(componentModel = "spring", uses = TrainingSetTemplateMapper.class, unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public abstract class TrainingSessionTemplateMapper {
+import java.util.Map;
+
+@Mapper(componentModel = "spring", uses = TrainingSetTemplateMapper.class, unmappedTargetPolicy = ReportingPolicy.ERROR)
+public interface TrainingSessionTemplateMapper  {
 
     @Mapping(source = "conjugatedDayType", target = "conjugatedDayType")
-    @Mapping(source = "trainingSets", target = "setTemplates")
-    public abstract TrainingSessionTemplateDetailResponse toDetailResponse(TrainingSessionTemplate entity);
+    @Mapping(source = "trainingSets", target = "setTemplates", qualifiedByName = "toResponseWithResolvedWeights")
+    public abstract TrainingSessionTemplateDetailResponse toDetailResponse(TrainingSessionTemplate entity, @Context Map<Long, ResolvedPrescription> resolved);
 
     public abstract TrainingSessionTemplateSummaryResponse toSummaryResponse(TrainingSessionTemplate entity);
 

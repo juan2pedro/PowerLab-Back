@@ -1,11 +1,13 @@
 package com.jpmt.powerlab.services;
 
+import com.jpmt.powerlab.models.dto.trainingsessiontemplate.SetOrderRequest;
 import com.jpmt.powerlab.models.dto.trainingsessiontemplate.TrainingSessionTemplateDetailResponse;
 import com.jpmt.powerlab.models.dto.trainingsessiontemplate.TrainingSessionTemplateRequest;
 import com.jpmt.powerlab.models.dto.trainingsessiontemplate.TrainingSessionTemplateSummaryResponse;
 import com.jpmt.powerlab.models.dto.trainingsettemplate.TrainingSetTemplateRequest;
 import com.jpmt.powerlab.models.dto.trainingsettemplate.TrainingSetTemplateResponse;
 import com.jpmt.powerlab.models.dto.trainingsettemplate.TrainingSetTemplateUpdateRequest;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -33,4 +35,6 @@ public interface TrainingSessionService {
     TrainingSetTemplateResponse findSetById(Long id);
 
     List<TrainingSetTemplateResponse> findBySessionIdWithExercise(Long sessionId);
+
+    void reorderSets(Long sessionId, @Valid List<SetOrderRequest> order);
 }

@@ -1,5 +1,6 @@
 package com.jpmt.powerlab.repositories;
 
+import com.jpmt.powerlab.models.domain.Status;
 import com.jpmt.powerlab.models.domain.WorkoutSession;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,4 +39,9 @@ public interface WorkoutSessionRepository extends JpaRepository<WorkoutSession, 
     List<WorkoutSession> findFullByDateRange(
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
+
+    @Query("SELECT s.date FROM WorkoutSession s WHERE s.status IN :statuses ORDER BY s.date")
+    List<LocalDate> findDatesByStatusIn(@Param("statuses") Collection<Status> statuses);
+
+    List<WorkoutSession> findByDateBetweenAndTrainingSessionTemplateIsNotNull(LocalDate from, LocalDate to);
 }

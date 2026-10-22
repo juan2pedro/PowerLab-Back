@@ -1,12 +1,15 @@
 package com.jpmt.powerlab.models.domain;
 
-
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
+import java.util.EnumSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "workout_set")
@@ -35,14 +38,25 @@ public class WorkoutSet {
     @Column(name = "weight")
     private Double weight;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "intensity_type")
-    private IntensityType intensityType;
-
-    @Column(name = "intensity_value")
+    @Column(name = "rpe_value")
     @Min(0)
     @Max(11)
-    private Integer intensityValue;
+    private Double rpeValue;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "set_type", nullable = false, length = 20)
+    @Builder.Default
+    private SetType type = SetType.WORKING;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "gear_class", length = 20)
+    private GearClass gearClass;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "used_gear", length = 20)
+    @Builder.Default
+    private Set<SupportGear> usedGear = EnumSet.noneOf(SupportGear.class);
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
