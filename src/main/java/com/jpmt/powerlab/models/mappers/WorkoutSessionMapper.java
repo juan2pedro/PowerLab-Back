@@ -5,14 +5,13 @@ import com.jpmt.powerlab.models.dto.workoutsession.WorkoutDayResponse;
 import com.jpmt.powerlab.models.dto.workoutsession.WorkoutSessionDetailResponse;
 import com.jpmt.powerlab.models.dto.workoutsession.WorkoutSessionRequest;
 import com.jpmt.powerlab.models.dto.workoutsession.WorkoutSessionSummaryResponse;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.Named;
-import org.mapstruct.ReportingPolicy;
+import com.jpmt.powerlab.services.PrescribedWeightResolver.ResolvedPrescription;
+import org.mapstruct.*;
 
 import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR, uses = {com.jpmt.powerlab.models.mappers.TrainingSetTemplateMapper.class})
 public interface WorkoutSessionMapper {
@@ -41,11 +40,11 @@ public interface WorkoutSessionMapper {
 
    @Mapping(source = "id", target = "workoutId")
    @Mapping(source = "trainingSessionTemplate", target = "template")
-   WorkoutDayResponse toDayResponse(WorkoutSession entity);
+   WorkoutDayResponse toDayResponse(WorkoutSession entity, @Context Map<Long, ResolvedPrescription> resolved);
 
    @Mapping(source = "conjugatedDayType", target = "conjugateDayType")
-   @Mapping(source = "trainingSets", target = "setTemplates")
-   WorkoutDayResponse.TemplateInfo toTemplateInfo(TrainingSessionTemplate entity);
+   @Mapping(source = "trainingSets", target = "setTemplates", qualifiedByName = "toResponseWithResolvedWeights")
+   WorkoutDayResponse.TemplateInfo toTemplateInfo(TrainingSessionTemplate entity, @Context Map<Long, ResolvedPrescription> resolved);
 
    @Mapping(source = "id", target = "entryId")
    @Mapping(source = "exercise", target = "exercise")

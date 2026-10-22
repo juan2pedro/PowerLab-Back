@@ -23,6 +23,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,6 +45,8 @@ class WorkoutServiceTest {
     private WorkoutEntryMapper entryMapper;
     @Mock
     private WorkoutSetMapper workoutSetMapper;
+    @Mock
+    private PrescribedWeightResolver prescribedWeightResolver;
 
     @InjectMocks
     private WorkoutServiceImpl workoutService;
@@ -174,7 +177,7 @@ class WorkoutServiceTest {
 
         when(workoutSessionRepository.findFullByDate(LocalDate.now())).thenReturn(Collections.singletonList(workoutSession));
         when(templateRepository.findByIdOrderByDisplayOrder(1L)).thenReturn(Optional.of(template));
-        when(workoutSessionMapper.toDayResponse(workoutSession)).thenReturn(expectedResponse);
+        when(workoutSessionMapper.toDayResponse(eq(workoutSession), any())).thenReturn(expectedResponse);
 
        Optional < WorkoutDayResponse > found = workoutService.findFullDayByDate(LocalDate.now());
        WorkoutDayResponse result = found.get();
@@ -216,11 +219,11 @@ class WorkoutServiceTest {
                 null,
                 null
         );
-        List<WorkoutDayResponse.Entry> entry = Collections.singletonList(new WorkoutDayResponse.Entry(
+        List<WorkoutDayResponse.WorkoutDayEntry> entry = Collections.singletonList(new WorkoutDayResponse.WorkoutDayEntry(
                 1L,
                 1,
                 exerciseResponse,
-                new WorkoutDayResponse.Target(5, 12, 100.0, "PERCENTAGE", "80.0", "2 min"),
+                new WorkoutDayResponse.WorkoutDayTarget(5, 12, 100.0, IntensityType.PERCENTAGE_1RM, 80.0, "2 min"),
                 "entry notes",
                 Collections.emptyList(),
                 1L
@@ -235,7 +238,7 @@ class WorkoutServiceTest {
         when(workoutSessionRepository.findFullByDate(LocalDate.now())).thenReturn(Collections.singletonList(workoutSession));
         when(templateRepository.findByIdOrderByDisplayOrder(1L)).thenReturn(Optional.of(template));
         when(workoutSetRepository.findByWorkoutEntryIdIn(List.of(1L))).thenReturn(Collections.emptyList());
-        when(workoutSessionMapper.toDayResponse(workoutSession)).thenReturn(expectedResponse);
+        when(workoutSessionMapper.toDayResponse(eq(workoutSession), any())).thenReturn(expectedResponse);
 
         Optional<WorkoutDayResponse> found = workoutService.findFullDayByDate(LocalDate.now());
         assertTrue(found.isPresent());

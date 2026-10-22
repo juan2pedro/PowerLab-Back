@@ -70,13 +70,13 @@ public class TrainingSetTemplate {
 
     @Min(-100)
     @Max(100)
-    @Column(name = "target_resistance_top_pct")
-    private Integer targetResistanceTopPct;
+    @Column(name = "target_resistance_min_pct")
+    private Integer targetResistanceMinPct;
 
     @Min(-100)
     @Max(100)
-    @Column(name = "target_resistance_bottom_pct")
-    private Integer targetResistanceBottomPct;
+    @Column(name = "target_resistance_max_pct")
+    private Integer targetResistanceMaxPct;
 
     @Column(name = "tempo", length = 20)
     @Pattern(regexp = "\\d-\\d-[\\dX]-\\d")
@@ -88,7 +88,7 @@ public class TrainingSetTemplate {
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.ARRAY)
-    @Column(name = "prescribed_gear", columnDefinition = "varchar(20)[]")
+    @Column(name = "prescribed_gear", length = 20)
     @Builder.Default
     private Set<SupportGear> prescribedGear = EnumSet.noneOf(SupportGear.class);
 

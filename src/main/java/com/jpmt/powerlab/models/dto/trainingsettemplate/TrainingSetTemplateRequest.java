@@ -25,8 +25,8 @@ public record TrainingSetTemplateRequest(
         IntensityType targetIntensityType,
         SlotCode referenceSlotCode,
         ReferenceSource referenceSource,
-        Integer targetResistanceTopPct,
-        Integer targetResistanceBottomPct,
+        Integer targetResistanceMinPct,
+        Integer targetResistanceMaxPct,
         @Pattern(regexp = "\\d-\\d-[\\dX]-\\d")
          String tempo,
         GearClass prescribedGearClass,

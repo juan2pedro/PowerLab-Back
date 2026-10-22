@@ -23,8 +23,12 @@ public record TrainingSetTemplateResponse(
         IntensityType targetIntensityType,
         SlotCode referenceSlotCode,
         ReferenceSource referenceSource,
-        Integer  targetResistanceTopPct,
-        Integer targetResistanceBottomPct,
+        Integer targetResistanceMinPct,
+        Integer targetResistanceMaxPct,
+        @Schema(description = "Resistencia de banda resuelta a kg (mínimo del rango) sobre el RM de referencia. Info de UI, no persistido.")
+        Double resolvedBandMinKg,
+        @Schema(description = "Resistencia de banda resuelta a kg (máximo del rango) sobre el RM de referencia. Info de UI, no persistido.")
+        Double resolvedBandMaxKg,
         String tempo,
         GearClass prescribedGearClass,
         @Schema(requiredMode = Schema.RequiredMode.REQUIRED)

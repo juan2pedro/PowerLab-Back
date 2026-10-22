@@ -36,13 +36,15 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     private final ExerciseRepository exerciseRepository;
     private final TrainingSessionTemplateMapper sessionMapper;
     private final TrainingSetTemplateMapper setMapper;
+    private final PrescribedWeightResolver prescribedWeightResolver;
 
-    public TrainingSessionServiceImpl(TrainingSessionTemplateRepository sessionRepository, TrainingSetTemplateRepository setRepository, ExerciseRepository exerciseRepository, TrainingSessionTemplateMapper sessionMapper, TrainingSetTemplateMapper setMapper) {
+    public TrainingSessionServiceImpl(TrainingSessionTemplateRepository sessionRepository, TrainingSetTemplateRepository setRepository, ExerciseRepository exerciseRepository, TrainingSessionTemplateMapper sessionMapper, TrainingSetTemplateMapper setMapper, PrescribedWeightResolver prescribedWeightResolver) {
         this.sessionRepository = sessionRepository;
         this.setRepository = setRepository;
         this.exerciseRepository = exerciseRepository;
         this.sessionMapper = sessionMapper;
         this.setMapper = setMapper;
+        this.prescribedWeightResolver = prescribedWeightResolver;
     }
 
     @Transactional(readOnly = true)
@@ -65,7 +67,7 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
         TrainingSessionTemplate entity = sessionMapper.toEntity(request);
 
         TrainingSessionTemplate saved = sessionRepository.save(entity);
-        return sessionMapper.toDetailResponse(saved);
+        return sessionMapper.toDetailResponse(saved,Map.of());
     }
 
     @Override
@@ -76,7 +78,7 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
 
         sessionMapper.updateEntityFromRequest(request, entity);
         TrainingSessionTemplate saved = sessionRepository.save(entity);
-        return sessionMapper.toDetailResponse(saved);
+        return sessionMapper.toDetailResponse(saved, Map.of());
     }
 
     @Transactional
@@ -93,7 +95,8 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     public TrainingSessionTemplateDetailResponse findSessionById(Long id) {
         TrainingSessionTemplate entity = sessionRepository.findByIdOrderByDisplayOrder(id)
                 .orElseThrow(() -> new ResourceNotFoundException(TSESSIONT, "id", id));
-        return sessionMapper.toDetailResponse(entity);
+
+        return sessionMapper.toDetailResponse(entity, prescribedWeightResolver.resolveAll(entity.getTrainingSets(), 1L));
     }
 
     @Transactional
@@ -196,3 +199,4 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
         });
     }
 }
+

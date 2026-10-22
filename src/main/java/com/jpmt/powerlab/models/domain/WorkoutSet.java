@@ -54,7 +54,7 @@ public class WorkoutSet {
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.ARRAY)
-    @Column(name = "used_gear", columnDefinition = "varchar(20)[]")
+    @Column(name = "used_gear", length = 20)
     @Builder.Default
     private Set<SupportGear> usedGear = EnumSet.noneOf(SupportGear.class);
 

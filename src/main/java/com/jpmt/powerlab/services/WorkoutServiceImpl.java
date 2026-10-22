@@ -39,6 +39,7 @@ public class WorkoutServiceImpl implements WorkoutService {
     private final WorkoutSessionMapper workoutSessionMapper;
     private final WorkoutEntryMapper entryMapper;
     private final WorkoutSetMapper workoutSetMapper;
+    private final PrescribedWeightResolver prescribedWeightResolver;
 
     public WorkoutServiceImpl(WorkoutSessionRepository sessionRepository,
                               WorkoutEntryRepository entryRepository,
@@ -46,7 +47,8 @@ public class WorkoutServiceImpl implements WorkoutService {
                               TrainingSetTemplateRepository setTemplateRepository,
                               ExerciseRepository exerciseRepository, WorkoutSetRepository workoutSetRepository,
                               WorkoutSessionMapper workoutSessionMapper,
-                              WorkoutEntryMapper entryMapper, WorkoutSetMapper workoutSetMapper) {
+                              WorkoutEntryMapper entryMapper, WorkoutSetMapper workoutSetMapper,
+                              PrescribedWeightResolver prescribedWeightResolver) {
         this.sessionRepository = sessionRepository;
         this.entryRepository = entryRepository;
         this.templateRepository = templateRepository;
@@ -56,6 +58,7 @@ public class WorkoutServiceImpl implements WorkoutService {
         this.workoutSessionMapper = workoutSessionMapper;
         this.entryMapper = entryMapper;
         this.workoutSetMapper = workoutSetMapper;
+        this.prescribedWeightResolver = prescribedWeightResolver;
     }
 
     @Transactional
@@ -312,14 +315,16 @@ public class WorkoutServiceImpl implements WorkoutService {
 
     @Transactional(readOnly = true)
     public WorkoutDayResponse loadFullDay(WorkoutSession workoutSession, Long templateId) {
+        Map<Long, PrescribedWeightResolver.ResolvedPrescription> resolvedWeights = Map.of();
         if (templateId != null) {
             TrainingSessionTemplate fullTemplate = templateRepository.findByIdOrderByDisplayOrder(templateId)
                     .orElseThrow(() -> new ResourceNotFoundException("TrainingSessionTemplate", "id", templateId));
             workoutSession.setTrainingSessionTemplate(fullTemplate);
+            resolvedWeights = prescribedWeightResolver.resolveAll(fullTemplate.getTrainingSets(), 1L);
         }
 
         if( workoutSession.getEntries().isEmpty()){
-            return workoutSessionMapper.toDayResponse(workoutSession);
+            return workoutSessionMapper.toDayResponse(workoutSession, resolvedWeights);
         }
         List<Long> entryIds = workoutSession.getEntries().stream().map(WorkoutEntry::getId).toList();
         List<WorkoutSet> allSets = workoutSetRepository.findByWorkoutEntryIdIn(entryIds);
@@ -335,7 +340,7 @@ public class WorkoutServiceImpl implements WorkoutService {
 
             entry.setSets(orderedSets);
         }
-        return workoutSessionMapper.toDayResponse(workoutSession);
+        return workoutSessionMapper.toDayResponse(workoutSession, resolvedWeights);
     }
 
     @Override
