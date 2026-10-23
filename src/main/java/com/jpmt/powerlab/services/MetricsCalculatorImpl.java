@@ -18,18 +18,21 @@ import org.springframework.stereotype.Service;
  * La tensión de bandas/cadenas no se suma (no hay dato de magnitud en WorkoutSet, solo en la
  * plantilla); su sola presencia marca el set como {@link #isEstimated}.
  *
- * <p>e1rm: null si measurementType != REPS, carga no computable o &lt;= 0, reps &lt; 1, o
- * repeticiones efectivas &gt; 12 (fuera del rango fiable de estas fórmulas). Las repeticiones
- * efectivas incorporan el RIR derivado del RPE antes de aplicar la fórmula elegida vía
- * {@code metrics.e1rm-formula} (EPLEY por defecto):
+ * <p>e1rm: null si measurementType != REPS, carga no computable o &lt;= 0, reps &lt; 1,
+ * repeticiones efectivas &lt; 1 (single fallado) o &gt; 12 (fuera del rango fiable de estas
+ * fórmulas). Las repeticiones efectivas incorporan el RIR derivado del RPE antes de aplicar la
+ * fórmula elegida vía {@code metrics.e1rm-formula} (EPLEY por defecto):
  * <pre>
- *     rir     = rpe == null ? null : max(0, 10 - rpe)
- *     effReps = reps + (rir ?? 0)      // sin RPE se asume fallo (marca estimated)
+ *     fallado:  effReps = reps - 1       // la última no salió; solo cuentan las completadas, a RIR 0
+ *     resto:    rir     = rpe == null ? 0 : max(0, 10 - rpe)
+ *               effReps = reps + rir     // sin RPE se asume fallo (marca estimated)
  *
  *     EPLEY:    e1rm = load * (1 + effReps / 30.0)
  *     BRZYCKI:  e1rm = load * 36.0 / (37.0 - effReps)
  *     LOMBARDI: e1rm = load * effReps ^ 0.10
  * </pre>
+ *
+ * <p>weightForReps invierte la fórmula activa: la carga teórica para N repeticiones dado un e1RM.
  *
  * <p>DOTS: {@code total * 500 / (A + B·bw + C·bw² + D·bw³ + E·bw⁴)}, bw clamp [40,210] hombres
  * / [40,150] mujeres.
@@ -110,16 +113,37 @@ public class MetricsCalculatorImpl implements MetricsCalculator {
         if (reps == null || reps < 1) {
             return null;
         }
-        Double rpe = set.getRpeValue();
-        double rir = rpe == null ? 0 : Math.max(0, 10 - rpe);
-        double effectiveReps = reps + rir;
-        if (effectiveReps > MAX_EFFECTIVE_REPS) {
+        double effectiveReps = effectiveReps(set, reps);
+        if (effectiveReps < 1 || effectiveReps > MAX_EFFECTIVE_REPS) {
             return null;
         }
         return switch (e1rmFormula) {
             case EPLEY -> load * (1 + effectiveReps / 30.0);
             case BRZYCKI -> load * 36.0 / (37.0 - effectiveReps);
             case LOMBARDI -> load * Math.pow(effectiveReps, 0.10);
+        };
+    }
+
+    /**
+     * Repeticiones que estiman la carga. En un intento fallado la última no salió, así que solo
+     * cuentan las completadas (reps - 1) a RIR 0; un single fallado no estima nada (0 reps). En el
+     * resto, las reps registradas más el RIR derivado del RPE (sin RPE se asume fallo, RIR 0).
+     */
+    private double effectiveReps(WorkoutSet set, int reps) {
+        if (isFailedSet(set)) {
+            return reps - 1;
+        }
+        Double rpe = set.getRpeValue();
+        double rir = rpe == null ? 0 : Math.max(0, 10 - rpe);
+        return reps + rir;
+    }
+
+    @Override
+    public double weightForReps(double e1rm, int reps) {
+        return switch (e1rmFormula) {
+            case EPLEY -> e1rm / (1 + reps / 30.0);
+            case BRZYCKI -> e1rm * (37.0 - reps) / 36.0;
+            case LOMBARDI -> e1rm / Math.pow(reps, 0.10);
         };
     }
 
