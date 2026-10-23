@@ -232,9 +232,59 @@ class MetricsServiceImplTest {
         ExercisePrs prs = metricsService.personalRecords(null, null, List.of(1L), null).exercises().get(0);
 
         assertEquals(180.0, prs.heaviestSet().weight());
+        // El fallado de 200 no pisa el récord válido: repMaxes se queda en 180 y el fallo va a failedRepMaxes.
         assertEquals(180.0, prs.repMaxes().stream().filter(rm -> rm.reps() == 1).findFirst().orElseThrow().weight());
+        assertEquals(200.0, prs.failedRepMaxes().stream().filter(rm -> rm.reps() == 1).findFirst().orElseThrow().weight());
         assertEquals(200.0, prs.bestFailedSingle().weight());
         assertEquals(LocalDate.of(2024, 3, 8), prs.bestFailedSingle().date());
+    }
+
+    @Test
+    void personalRecords_failedRepMaxes_keepsHeaviestFailedPerRepCount() {
+        Exercise exercise = exercise(1L, "Sentadilla", MainPattern.SQUAT);
+        WorkoutSession s1 = session(LocalDate.of(2024, 4, 1), null);
+        WorkoutSession s2 = session(LocalDate.of(2024, 4, 8), null);
+        WorkoutSession s3 = session(LocalDate.of(2024, 4, 15), null);
+        WorkoutSet failedLighter = set(entry(s1, exercise), 120.0, 3, 11.0);
+        WorkoutSet failedHeavier = set(entry(s2, exercise), 130.0, 3, 11.0);
+        WorkoutSet validThree = set(entry(s3, exercise), 110.0, 3, 8.0);
+
+        when(workoutSetRepository.findForMetrics(any(), any(), eq(List.of(1L)), isNull(), eq(SetFilter.WORKING_SETS.setTypes())))
+                .thenReturn(List.of(failedLighter, failedHeavier, validThree));
+
+        ExercisePrs prs = metricsService.personalRecords(null, null, List.of(1L), null).exercises().get(0);
+
+        assertEquals(130.0, prs.failedRepMaxes().stream().filter(rm -> rm.reps() == 3).findFirst().orElseThrow().weight());
+        assertEquals(110.0, prs.repMaxes().stream().filter(rm -> rm.reps() == 3).findFirst().orElseThrow().weight());
+    }
+
+    @Test
+    void personalRecords_referenceMax_comesFromProvider() {
+        Exercise exercise = exercise(1L, "Sentadilla", MainPattern.SQUAT);
+        WorkoutSession s = session(LocalDate.of(2024, 5, 1), null);
+        WorkoutSet validSet = set(entry(s, exercise), 150.0, 3, 8.0);
+
+        when(workoutSetRepository.findForMetrics(any(), any(), eq(List.of(1L)), isNull(), eq(SetFilter.WORKING_SETS.setTypes())))
+                .thenReturn(List.of(validSet));
+        when(oneRepMaxProvider.referenceMax(any(), eq(1L))).thenReturn(Optional.of(185.0));
+
+        ExercisePrs prs = metricsService.personalRecords(null, null, List.of(1L), null).exercises().get(0);
+
+        assertEquals(185.0, prs.referenceMax());
+    }
+
+    @Test
+    void personalRecords_referenceMax_nullWhenNotConfigured() {
+        Exercise exercise = exercise(1L, "Sentadilla", MainPattern.SQUAT);
+        WorkoutSession s = session(LocalDate.of(2024, 5, 1), null);
+        WorkoutSet validSet = set(entry(s, exercise), 150.0, 3, 8.0);
+
+        when(workoutSetRepository.findForMetrics(any(), any(), eq(List.of(1L)), isNull(), eq(SetFilter.WORKING_SETS.setTypes())))
+                .thenReturn(List.of(validSet));
+
+        ExercisePrs prs = metricsService.personalRecords(null, null, List.of(1L), null).exercises().get(0);
+
+        assertNull(prs.referenceMax());
     }
 
     @Test
@@ -354,6 +404,25 @@ class MetricsServiceImplTest {
         assertNull(sbd.bestRealTotal());
         assertNull(sbd.dots());
         assertNull(sbd.ipfGl());
+    }
+
+    @Test
+    void summary_sbd_referenceMax_fromProviderWhenCompLiftConfigured() {
+        Exercise squat = exercise(1L, "Sentadilla", MainPattern.SQUAT);
+        WorkoutSession s = session(LocalDate.now().minusDays(7), null);
+        List<WorkoutSet> squatSets = List.of(set(entry(s, squat), 200.0, 1, 9.0));
+
+        when(compLiftProvider.compLiftExerciseId(any(), eq(MainPattern.SQUAT))).thenReturn(Optional.of(1L));
+        when(workoutSetRepository.findForMetrics(any(), any(), eq(List.of(1L)), isNull(),
+                eq(SetFilter.WORKING_SETS.setTypes()))).thenReturn(squatSets);
+        when(oneRepMaxProvider.referenceMax(any(), eq(1L))).thenReturn(Optional.of(210.0));
+
+        SbdSummary sbd = metricsService.summary(null, null).sbd();
+
+        LiftSummary squatSummary = sbd.lifts().stream()
+                .filter(l -> l.lift() == MainPattern.SQUAT).findFirst().orElseThrow();
+        assertTrue(squatSummary.compLiftConfigured());
+        assertEquals(210.0, squatSummary.referenceMax());
     }
 
     @Test

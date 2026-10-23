@@ -333,6 +333,8 @@ public class MetricsServiceImpl implements MetricsService {
     private ExercisePrs buildExercisePrs(Long exerciseId, List<WorkoutSet> sets, Long athleteId) {
         Exercise exercise = sets.get(0).getWorkoutEntry().getExercise();
 
+        Double referenceMax = oneRepMaxProvider.referenceMax(athleteId, exerciseId).orElse(null);
+
         PrSetInfo heaviestSet = sets.stream()
                 .filter(metricsCalculator::isValidLift)
                 .max(Comparator.comparingDouble(WorkoutSet::getWeight)
@@ -353,19 +355,42 @@ public class MetricsServiceImpl implements MetricsService {
         Double roundedBestE1rm = bestE1rm == null ? null : round1(bestE1rm);
         PrSetInfo bestE1rmSet = bestE1rmSetRaw == null ? null : toPrSetInfo(bestE1rmSetRaw);
 
+        // repMaxes = solo conseguidos; failedRepMaxes = solo fallados. Separados a propósito para
+        // que un fallo nunca pise un récord válido (un fallo de 125 no sustituye un 1RM de 120).
+        List<RepMax> repMaxes = repMaxesBy(sets, metricsCalculator::isValidLift);
+        List<RepMax> failedRepMaxes = repMaxesBy(sets,
+                ws -> ws.getWeight() != null && metricsCalculator.isFailedSet(ws));
+        List<EstimatedRepMax> estimatedRepMaxes = estimatedRepMaxes(bestE1rm);
+
+        return new ExercisePrs(exerciseId, exercise.getBaseName(), referenceMax, heaviestSet, roundedBestE1rm,
+                bestE1rmSet, bestFailedSingle(sets), repMaxes, failedRepMaxes, estimatedRepMaxes);
+    }
+
+    /** Mejor peso (más pesado; desempate por fecha más antigua) por cada número de reps de 1 a REP_MAX_UPPER_BOUND. */
+    private List<RepMax> repMaxesBy(List<WorkoutSet> sets, Predicate<WorkoutSet> filter) {
         List<RepMax> repMaxes = new ArrayList<>();
         for (int reps = 1; reps <= REP_MAX_UPPER_BOUND; reps++) {
             int repsToMatch = reps;
             sets.stream()
                     .filter(ws -> ws.getReps() != null && ws.getReps() == repsToMatch)
-                    .filter(metricsCalculator::isValidLift)
+                    .filter(filter)
                     .max(Comparator.comparingDouble(WorkoutSet::getWeight).thenComparing(BY_EARLIEST_DATE))
                     .ifPresent(ws -> repMaxes.add(new RepMax(repsToMatch, round1(ws.getWeight()),
-                            ws.getWorkoutEntry().getSession().getDate())));
+                            ws.getRpeValue(), ws.getWorkoutEntry().getSession().getDate())));
         }
+        return repMaxes;
+    }
 
-        return new ExercisePrs(exerciseId, exercise.getBaseName(), heaviestSet, roundedBestE1rm, bestE1rmSet,
-                bestFailedSingle(sets), repMaxes);
+    /** RM estimados por reps a partir del mejor e1RM, invirtiendo la fórmula del backend. Vacío si no hay e1RM. */
+    private List<EstimatedRepMax> estimatedRepMaxes(Double bestE1rm) {
+        if (bestE1rm == null) {
+            return List.of();
+        }
+        List<EstimatedRepMax> estimated = new ArrayList<>();
+        for (int reps = 1; reps <= REP_MAX_UPPER_BOUND; reps++) {
+            estimated.add(new EstimatedRepMax(reps, round1(metricsCalculator.weightForReps(bestE1rm, reps))));
+        }
+        return estimated;
     }
 
     /**
@@ -465,7 +490,13 @@ public class MetricsServiceImpl implements MetricsService {
             Double xBodyweight = (bestWeight == null || bodyweightKg == null || bodyweightKg == 0)
                     ? null : round1(bestWeight / bodyweightKg);
 
+            // El RM de referencia se configura sobre el comp lift; para un fallback por patrón no existe.
+            Double referenceMax = resolved.configured()
+                    ? oneRepMaxProvider.referenceMax(athleteId, resolved.exerciseId()).orElse(null)
+                    : null;
+
             lifts.add(new LiftSummary(lift, resolved.exerciseId(), exercise.getBaseName(), resolved.configured(),
+                    referenceMax,
                     bestWeight == null ? null : round1(bestWeight),
                     bestE1rm == null ? null : round1(bestE1rm),
                     xBodyweight,

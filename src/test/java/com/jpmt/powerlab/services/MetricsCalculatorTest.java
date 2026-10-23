@@ -67,6 +67,46 @@ class MetricsCalculatorTest {
     }
 
     @Test
+    void e1rm_failedSet_countsOnlyCompletedRepsAtRir0() {
+        // 5 reps con FALLO = las 4 completadas a RPE 10 (RIR 0): la 5ª no salió y no infla el e1RM.
+        WorkoutSet set = buildSet(100.0, 5, 11.0);
+        Exercise exercise = exerciseWith(LoadMode.EXTERNAL, MeasurementType.REPS, null);
+
+        Double e1rm = calculator.e1rm(set, exercise, 1L);
+
+        assertEquals(100 * (1 + 4 / 30.0), e1rm, DELTA);
+    }
+
+    @Test
+    void e1rm_failedSingle_returnsNull() {
+        // Un single fallado no tiene repeticiones completadas: no estima nada.
+        WorkoutSet set = buildSet(100.0, 1, 11.0);
+        Exercise exercise = exerciseWith(LoadMode.EXTERNAL, MeasurementType.REPS, null);
+
+        assertNull(calculator.e1rm(set, exercise, 1L));
+    }
+
+    @Test
+    void weightForReps_epley_isInverseOfE1rm() {
+        double e1rm = 100 * (1 + 5 / 30.0);
+        assertEquals(100.0, calculator.weightForReps(e1rm, 5), DELTA);
+    }
+
+    @Test
+    void weightForReps_brzycki_isInverseOfE1rm() {
+        MetricsCalculatorImpl brzycki = new MetricsCalculatorImpl(bodyweightProvider, 8.0, E1rmFormula.BRZYCKI);
+        double e1rm = 100 * 36.0 / (37.0 - 5);
+        assertEquals(100.0, brzycki.weightForReps(e1rm, 5), DELTA);
+    }
+
+    @Test
+    void weightForReps_lombardi_isInverseOfE1rm() {
+        MetricsCalculatorImpl lombardi = new MetricsCalculatorImpl(bodyweightProvider, 8.0, E1rmFormula.LOMBARDI);
+        double e1rm = 100 * Math.pow(5, 0.10);
+        assertEquals(100.0, lombardi.weightForReps(e1rm, 5), DELTA);
+    }
+
+    @Test
     void e1rm_effectiveRepsTooHigh_returnsNull() {
         WorkoutSet set = buildSet(100.0, 12, 1.0);
         Exercise exercise = exerciseWith(LoadMode.EXTERNAL, MeasurementType.REPS, null);

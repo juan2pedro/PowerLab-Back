@@ -17,6 +17,12 @@ public interface MetricsCalculator {
      */
     Double e1rm(WorkoutSet set, Exercise exercise, Long athleteId);
 
+    /**
+     * Carga teórica para {@code reps} repeticiones a partir de un e1RM, invirtiendo la fórmula
+     * configurada. Operación inversa de {@link #e1rm}. {@code reps} debe ser &gt;= 1.
+     */
+    double weightForReps(double e1rm, int reps);
+
     boolean isHardSet(WorkoutSet set);
 
     boolean isFailedSet(WorkoutSet set);
