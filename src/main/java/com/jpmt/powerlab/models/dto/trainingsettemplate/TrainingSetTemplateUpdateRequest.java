@@ -20,7 +20,7 @@ public record TrainingSetTemplateUpdateRequest(
         @NotNull(message = "amrap is required")
         Boolean amrap,
         SlotCode slotCode,
-        @Pattern(regexp = "\\d-\\d-[\\dX]-\\d")
+        @Pattern(regexp = "\\d-\\d-[\\dX]-\\d(\\|\\d-\\d-[\\dX]-\\d)*")
         String tempo,
         Double targetWeight,
         Double targetIntensityMin,

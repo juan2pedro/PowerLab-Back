@@ -78,8 +78,8 @@ public class TrainingSetTemplate {
     @Column(name = "target_resistance_max_pct")
     private Integer targetResistanceMaxPct;
 
-    @Column(name = "tempo", length = 20)
-    @Pattern(regexp = "\\d-\\d-[\\dX]-\\d")
+    @Column(name = "tempo", length = 60)
+    @Pattern(regexp = "\\d-\\d-[\\dX]-\\d(\\|\\d-\\d-[\\dX]-\\d)*")
     private String tempo;
 
     @Enumerated(EnumType.STRING)

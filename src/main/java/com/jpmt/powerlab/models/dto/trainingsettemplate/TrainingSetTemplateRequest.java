@@ -27,7 +27,7 @@ public record TrainingSetTemplateRequest(
         ReferenceSource referenceSource,
         Integer targetResistanceMinPct,
         Integer targetResistanceMaxPct,
-        @Pattern(regexp = "\\d-\\d-[\\dX]-\\d")
+        @Pattern(regexp = "\\d-\\d-[\\dX]-\\d(\\|\\d-\\d-[\\dX]-\\d)*")
          String tempo,
         GearClass prescribedGearClass,
         Set<SupportGear> prescribedGear,
