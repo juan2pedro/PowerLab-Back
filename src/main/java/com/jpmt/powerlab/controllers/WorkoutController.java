@@ -4,10 +4,7 @@ import com.jpmt.powerlab.models.dto.ApiErrorResponse;
 import com.jpmt.powerlab.models.dto.workoutentry.WorkoutEntryCreateRequest;
 import com.jpmt.powerlab.models.dto.workoutentry.WorkoutEntryResponse;
 import com.jpmt.powerlab.models.dto.workoutentry.WorkoutEntryUpdateRequest;
-import com.jpmt.powerlab.models.dto.workoutsession.WorkoutDayResponse;
-import com.jpmt.powerlab.models.dto.workoutsession.WorkoutSessionDetailResponse;
-import com.jpmt.powerlab.models.dto.workoutsession.WorkoutSessionRequest;
-import com.jpmt.powerlab.models.dto.workoutsession.WorkoutSessionSummaryResponse;
+import com.jpmt.powerlab.models.dto.workoutsession.*;
 import com.jpmt.powerlab.models.dto.workoutset.WorkoutSetRequest;
 import com.jpmt.powerlab.models.dto.workoutset.WorkoutSetResponse;
 import com.jpmt.powerlab.models.dto.workoutset.WorkoutSetWithExerciseRequest;
@@ -132,6 +129,33 @@ public class WorkoutController {
             @Parameter(description = "ID de la sesión") @PathVariable Long id) {
         WorkoutSessionDetailResponse session = workoutService.findWorkoutById(id);
         return ResponseEntity.ok(session);
+    }
+
+    @PatchMapping("/{id}/status")
+    @Operation(
+            summary = "Update workout session status",
+            description = "Actualiza el estado de una sesión (IN_PROGRESS, COMPLETED, PARTIAL, SKIPPED). " +
+                    "El estado es intención explícita del usuario: la adherencia y las rachas solo cuentan sesiones " +
+                    "COMPLETED o PARTIAL."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Estado actualizado",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = WorkoutSessionDetailResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Sesión no encontrada",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ApiErrorResponse.class))
+            )
+    })
+    public ResponseEntity<WorkoutSessionDetailResponse> updateWorkoutStatus(
+            @Parameter(description = "ID de la sesión") @PathVariable Long id,
+            @Valid @RequestBody WorkoutSessionStatusRequest request) {
+        return ResponseEntity.ok(workoutService.updateWorkoutStatus(id, request.status()));
     }
 
     @PostMapping

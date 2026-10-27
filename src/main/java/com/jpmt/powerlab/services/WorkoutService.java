@@ -23,6 +23,8 @@ public interface WorkoutService {
 
     WorkoutSessionDetailResponse createWorkoutFromTemplate(Long templeteId, WorkoutSessionRequest session);
 
+    WorkoutSessionDetailResponse updateWorkoutStatus(Long id, com.jpmt.powerlab.models.domain.Status status);
+
     List<WorkoutSessionSummaryResponse> findAllWorkoutSessionsByDateRange(LocalDate from,LocalDate to);
 
     WorkoutSessionDetailResponse findWorkoutById(Long id);

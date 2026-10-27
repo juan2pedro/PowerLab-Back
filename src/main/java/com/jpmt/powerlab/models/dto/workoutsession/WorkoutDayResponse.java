@@ -1,9 +1,6 @@
 package com.jpmt.powerlab.models.dto.workoutsession;
 
-import com.jpmt.powerlab.models.domain.GearClass;
-import com.jpmt.powerlab.models.domain.IntensityType;
-import com.jpmt.powerlab.models.domain.SetType;
-import com.jpmt.powerlab.models.domain.SupportGear;
+import com.jpmt.powerlab.models.domain.*;
 import com.jpmt.powerlab.models.dto.exercise.ExerciseResponse;
 import com.jpmt.powerlab.models.dto.trainingsettemplate.TrainingSetTemplateResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -17,6 +14,7 @@ public record WorkoutDayResponse(
         @NotNull
         Long workoutId,
         LocalDate date,
+        Status status,
         TemplateInfo template,
         List<WorkoutDayEntry> entries
 ) {

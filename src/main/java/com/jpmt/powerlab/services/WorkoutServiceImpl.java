@@ -66,6 +66,7 @@ public class WorkoutServiceImpl implements WorkoutService {
     public WorkoutSessionDetailResponse saveWorkoutSession(WorkoutSessionRequest sessionRequest) {
         assertNoWorkoutOnDate(sessionRequest.date());
         WorkoutSession session = workoutSessionMapper.toEntity(sessionRequest);
+        applyDefaultStatus(session);
 
         if (sessionRequest.trainingSessionTemplateId() != null) {
             TrainingSessionTemplate template = templateRepository.findById(sessionRequest.trainingSessionTemplateId())
@@ -85,10 +86,27 @@ public class WorkoutServiceImpl implements WorkoutService {
                 .orElseThrow(() -> new ResourceNotFoundException("TrainingSessionTemplate", "id", templateId));
 
         WorkoutSession session = workoutSessionMapper.toEntity(sessionRequest);
+        applyDefaultStatus(session);
         session.setTrainingSessionTemplate(template);
 
         WorkoutSession saved = sessionRepository.save(session);
         return workoutSessionMapper.toDetailResponse(saved);
+    }
+
+    /** Una sesión recién creada está en curso salvo que el cliente indique otro estado. */
+    private void applyDefaultStatus(WorkoutSession session) {
+        if (session.getStatus() == null) {
+            session.setStatus(Status.IN_PROGRESS);
+        }
+    }
+
+    @Transactional
+    @Override
+    public WorkoutSessionDetailResponse updateWorkoutStatus(Long id, Status status) {
+        WorkoutSession session = sessionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("WorkoutSession", "id", id));
+        session.setStatus(status);
+        return workoutSessionMapper.toDetailResponse(sessionRepository.save(session));
     }
 
     /**
