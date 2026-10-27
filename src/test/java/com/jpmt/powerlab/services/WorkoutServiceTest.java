@@ -63,6 +63,7 @@ class WorkoutServiceTest {
                 1L,
                 LocalDate.now(),
                 null,
+                Status.IN_PROGRESS,
                 java.util.Collections.emptyList()
         );
 
@@ -88,6 +89,7 @@ class WorkoutServiceTest {
                 1L,
                 LocalDate.now(),
                 null,
+                Status.IN_PROGRESS,
                 java.util.Collections.emptyList()
         );
 
@@ -117,6 +119,7 @@ class WorkoutServiceTest {
                 1L,
                 LocalDate.now(),
                 1L,
+                Status.IN_PROGRESS,
                 java.util.Collections.emptyList()
         );
         when(templateRepository.findById(1L)).thenReturn(java.util.Optional.of(template));
@@ -140,9 +143,9 @@ class WorkoutServiceTest {
                 WorkoutSession.builder().id(2L).date(LocalDate.now().minusDays(10)).build()
         );
         when(workoutSessionMapper.toSummaryResponse(sessions.get(0)))
-                .thenReturn(new WorkoutSessionSummaryResponse(1L, LocalDate.now(), 1L, java.util.Collections.emptyList()));
+                .thenReturn(new WorkoutSessionSummaryResponse(1L, LocalDate.now(), 1L, Status.IN_PROGRESS, java.util.Collections.emptyList()));
         when(workoutSessionMapper.toSummaryResponse(sessions.get(1)))
-                .thenReturn(new WorkoutSessionSummaryResponse(2L, LocalDate.now().minusDays(10), 1L, java.util.Collections.emptyList()));
+                .thenReturn(new WorkoutSessionSummaryResponse(2L, LocalDate.now().minusDays(10), 1L, Status.IN_PROGRESS, java.util.Collections.emptyList()));
 
         when(workoutSessionRepository.findFullByDateRange(from, to)).thenReturn(sessions);
         List<WorkoutSessionSummaryResponse> result = workoutService.findAllWorkoutSessionsByDateRange(from, to);
@@ -171,6 +174,7 @@ class WorkoutServiceTest {
         WorkoutDayResponse expectedResponse = new WorkoutDayResponse(
                 1L,
                 LocalDate.now(),
+                Status.IN_PROGRESS,
                 templateInfo,
                 Collections.emptyList()
         );
@@ -231,6 +235,7 @@ class WorkoutServiceTest {
         WorkoutDayResponse expectedResponse = new WorkoutDayResponse(
                 1L,
                 LocalDate.now(),
+                Status.IN_PROGRESS,
                 templateInfo,
                 entry
         );
