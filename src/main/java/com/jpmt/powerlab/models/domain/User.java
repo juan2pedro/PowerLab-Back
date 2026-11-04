@@ -1,16 +1,13 @@
 package com.jpmt.powerlab.models.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.validator.constraints.UniqueElements;
 
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "exercise")
+@Table(name = "user")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -38,5 +35,8 @@ public class User {
 
     private LocalDate updatedAt;
 
-
+    @Enumerated(EnumType.STRING)
+    @Column(name = "default_Pr_Visibility", nullable = false, length = 20)
+    @Builder.Default
+    private Visibility defaultPrVisibility = Visibility.PRIVATE;
 }
