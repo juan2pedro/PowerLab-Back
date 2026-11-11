@@ -15,15 +15,19 @@ import java.time.LocalDate;
 public class Bodyweight {
     @Id
     @Column(nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
    @ManyToOne(optional = false, fetch = FetchType.LAZY)
    @JoinColumn(name = "user_id", nullable = false)
    private User user;
 
+
    private LocalDate date;
 
    private Double weight;
 
    private String notes;
+
+
 }

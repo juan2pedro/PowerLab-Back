@@ -14,6 +14,7 @@ public interface TrainingSessionTemplateMapper  {
 
     @Mapping(source = "conjugatedDayType", target = "conjugatedDayType")
     @Mapping(source = "trainingSets", target = "setTemplates", qualifiedByName = "toResponseWithResolvedWeights")
+    @Mapping(source = "block", target = "block")
     public abstract TrainingSessionTemplateDetailResponse toDetailResponse(TrainingSessionTemplate entity, @Context Map<Long, ResolvedPrescription> resolved);
 
     public abstract TrainingSessionTemplateSummaryResponse toSummaryResponse(TrainingSessionTemplate entity);

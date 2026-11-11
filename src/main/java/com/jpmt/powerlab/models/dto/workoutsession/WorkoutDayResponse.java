@@ -20,7 +20,7 @@ public record WorkoutDayResponse(
 ) {
     public record TemplateInfo(
             Long id,
-            String blockName,
+            Block block,
             Integer weekNumber,
             Integer dayIndex,
             String conjugateDayType,

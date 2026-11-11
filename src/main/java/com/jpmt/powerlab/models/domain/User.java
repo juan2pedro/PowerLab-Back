@@ -2,12 +2,12 @@ package com.jpmt.powerlab.models.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.validator.constraints.UniqueElements;
 
-import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.Date;
 
 @Entity
-@Table(name = "user")
+@Table(name = "users")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,27 +16,48 @@ import java.time.LocalDate;
 public class User {
     @Id
     @Column(nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @UniqueElements
+    @Column(unique = true, nullable = false)
     private String email;
 
+    @Column(nullable = false)
     private String passwordHash;
 
+    @Column(unique = true, nullable = false)
     private String username;
 
     private Sex sex;
 
-    private Boolean isCoach;
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean coach = false;
 
-    private LocalDate dateOfBirth;
+    private Date dateOfBirth;
 
-    private LocalDate createdAt;
+    private OffsetDateTime createdAt;
 
-    private LocalDate updatedAt;
+    private OffsetDateTime updatedAt;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "default_Pr_Visibility", nullable = false, length = 20)
+    @Column(name = "default_pr_visibility", nullable = false, length = 20)
     @Builder.Default
     private Visibility defaultPrVisibility = Visibility.PRIVATE;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean active = true;
+
+    @PrePersist
+    void prePersist() {
+        OffsetDateTime now = OffsetDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+
+    @PreUpdate
+    void preUpdate() {
+        this.updatedAt = OffsetDateTime.now();
+    }
 }
