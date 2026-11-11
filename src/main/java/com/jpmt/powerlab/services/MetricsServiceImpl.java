@@ -159,7 +159,7 @@ public class MetricsServiceImpl implements MetricsService {
             case MONTH -> YearMonth.from(date).toString();
             case YEAR -> String.valueOf(date.getYear());
             case BLOCK -> session.getTrainingSessionTemplate() != null
-                    ? session.getTrainingSessionTemplate().getBlockName()
+                    ? session.getTrainingSessionTemplate().getBlock().getName()
                     : "Sin bloque";
         };
     }
