@@ -3,8 +3,8 @@ package com.jpmt.powerlab.models.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.util.Date;
 
 @Entity
 @Table(name = "users")
@@ -28,13 +28,15 @@ public class User {
     @Column(unique = true, nullable = false)
     private String username;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     private Sex sex;
 
     @Builder.Default
     @Column(nullable = false)
     private boolean coach = false;
 
-    private Date dateOfBirth;
+    private LocalDate dateOfBirth;
 
     private OffsetDateTime createdAt;
 
