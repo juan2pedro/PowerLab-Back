@@ -9,7 +9,7 @@ import org.mapstruct.*;
 
 import java.util.Map;
 
-@Mapper(componentModel = "spring", uses = TrainingSetTemplateMapper.class, unmappedTargetPolicy = ReportingPolicy.ERROR)
+@Mapper(componentModel = "spring", uses = {TrainingSetTemplateMapper.class, BlockMapper.class}, unmappedTargetPolicy = ReportingPolicy.ERROR)
 public interface TrainingSessionTemplateMapper  {
 
     @Mapping(source = "conjugatedDayType", target = "conjugatedDayType")
@@ -21,10 +21,12 @@ public interface TrainingSessionTemplateMapper  {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "trainingSets", ignore = true)
+    @Mapping(target = "block", ignore = true)
     public abstract TrainingSessionTemplate toEntity(TrainingSessionTemplateRequest dto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "trainingSets", ignore = true)
+    @Mapping(target = "block", ignore = true)
     public abstract void updateEntityFromRequest(
             TrainingSessionTemplateRequest request,
             @MappingTarget TrainingSessionTemplate entity

@@ -62,10 +62,10 @@ public class TrainingSessionController {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ApiErrorResponse.class)))
     })
-    public ResponseEntity<List<TrainingSessionTemplateSummaryResponse>> findAllSessionByBlockNameAndWeekNumber(
-            @Parameter(description = "Nombre del bloque de entrenamiento", required = true) @RequestParam String blockName,
+    public ResponseEntity<List<TrainingSessionTemplateSummaryResponse>> findAllSessionByBlockIdAndWeekNumber(
+            @Parameter(description = "ID del bloque de entrenamiento", required = true) @RequestParam Long blockId,
             @Parameter(description = "Número de semana (>= 1)", required = true) @RequestParam Integer weekNumber) {
-        List<TrainingSessionTemplateSummaryResponse> result = service.findAllSessionByBlockNameAndWeekNumber(blockName, weekNumber);
+        List<TrainingSessionTemplateSummaryResponse> result = service.findAllSessionByBlockIdAndWeekNumber(blockId, weekNumber);
         return ResponseEntity.ok(result);
     }
 
