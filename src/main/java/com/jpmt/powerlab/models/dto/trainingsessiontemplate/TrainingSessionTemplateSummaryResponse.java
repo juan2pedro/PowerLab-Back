@@ -1,10 +1,10 @@
 package com.jpmt.powerlab.models.dto.trainingsessiontemplate;
 
-import com.jpmt.powerlab.models.domain.Block;
+import com.jpmt.powerlab.models.dto.block.BlockResponse;
 
 public record TrainingSessionTemplateSummaryResponse(
         Long id,
-        Block block,
+        BlockResponse block,
         Integer weekNumber,
         Integer dayIndex
 ) {

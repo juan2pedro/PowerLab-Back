@@ -103,7 +103,8 @@ class MetricsServiceImplTest {
     }
 
     private WorkoutSession plannedSession(LocalDate date, Status status) {
-        TrainingSessionTemplate template = TrainingSessionTemplate.builder().id(1L).blockName("Block A")
+        Block block = Block.builder().id(1L).name("block name").build();
+        TrainingSessionTemplate template = TrainingSessionTemplate.builder().id(1L).block(block)
                 .weekNumber(1).dayIndex(1).conjugatedDayType(ConjugatedDayType.NONE).build();
         return WorkoutSession.builder().id(idCounter++).date(date).trainingSessionTemplate(template)
                 .status(status).build();

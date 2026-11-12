@@ -1,9 +1,11 @@
 package com.jpmt.powerlab.services;
 
 import com.jpmt.powerlab.models.domain.Block;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Service
 public interface BlockService {
 
     List<Block> findAll();

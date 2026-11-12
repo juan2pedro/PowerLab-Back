@@ -2,6 +2,7 @@ package com.jpmt.powerlab.services;
 
 import com.jpmt.powerlab.exceptions.BadRequestException;
 import com.jpmt.powerlab.exceptions.ResourceNotFoundException;
+import com.jpmt.powerlab.models.domain.Block;
 import com.jpmt.powerlab.models.domain.Exercise;
 import com.jpmt.powerlab.models.domain.TrainingSessionTemplate;
 import com.jpmt.powerlab.models.domain.TrainingSetTemplate;
@@ -14,6 +15,7 @@ import com.jpmt.powerlab.models.dto.trainingsettemplate.TrainingSetTemplateRespo
 import com.jpmt.powerlab.models.dto.trainingsettemplate.TrainingSetTemplateUpdateRequest;
 import com.jpmt.powerlab.models.mappers.TrainingSessionTemplateMapper;
 import com.jpmt.powerlab.models.mappers.TrainingSetTemplateMapper;
+import com.jpmt.powerlab.repositories.BlockRepository;
 import com.jpmt.powerlab.repositories.ExerciseRepository;
 import com.jpmt.powerlab.repositories.TrainingSessionTemplateRepository;
 import com.jpmt.powerlab.repositories.TrainingSetTemplateRepository;
@@ -37,14 +39,16 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     private final TrainingSessionTemplateMapper sessionMapper;
     private final TrainingSetTemplateMapper setMapper;
     private final PrescribedWeightResolver prescribedWeightResolver;
+    private final BlockRepository blockRepository;
 
-    public TrainingSessionServiceImpl(TrainingSessionTemplateRepository sessionRepository, TrainingSetTemplateRepository setRepository, ExerciseRepository exerciseRepository, TrainingSessionTemplateMapper sessionMapper, TrainingSetTemplateMapper setMapper, PrescribedWeightResolver prescribedWeightResolver) {
+    public TrainingSessionServiceImpl(TrainingSessionTemplateRepository sessionRepository, TrainingSetTemplateRepository setRepository, ExerciseRepository exerciseRepository, TrainingSessionTemplateMapper sessionMapper, TrainingSetTemplateMapper setMapper, PrescribedWeightResolver prescribedWeightResolver, BlockRepository blockRepository) {
         this.sessionRepository = sessionRepository;
         this.setRepository = setRepository;
         this.exerciseRepository = exerciseRepository;
         this.sessionMapper = sessionMapper;
         this.setMapper = setMapper;
         this.prescribedWeightResolver = prescribedWeightResolver;
+        this.blockRepository = blockRepository;
     }
 
     @Transactional(readOnly = true)
@@ -54,18 +58,22 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
         return entities.stream().map(sessionMapper::toSummaryResponse).toList();
     }
 
+
     @Transactional(readOnly = true)
     @Override
-    public List<TrainingSessionTemplateSummaryResponse> findAllSessionByBlockNameAndWeekNumber(String blockName, Integer weekNumber) {
-        List<TrainingSessionTemplate> entities = sessionRepository.findByBlockNameAndWeekNumberOrderByDayIndexAsc(blockName, weekNumber);
+    public List<TrainingSessionTemplateSummaryResponse> findAllSessionByBlockIdAndWeekNumber(Long blockId, Integer weekNumber) {
+        List<TrainingSessionTemplate> entities = sessionRepository.findByBlock_IdAndWeekNumberOrderByDayIndexAsc(blockId, weekNumber);
         return entities.stream().map(sessionMapper::toSummaryResponse).toList();
     }
 
     @Transactional
     @Override
     public TrainingSessionTemplateDetailResponse saveSession(TrainingSessionTemplateRequest request) {
-        TrainingSessionTemplate entity = sessionMapper.toEntity(request);
 
+        Block block = blockRepository.findById(request.blockId())
+                .orElseThrow(() -> new ResourceNotFoundException("Block", "id", request.blockId()));
+        TrainingSessionTemplate entity = sessionMapper.toEntity(request);
+        entity.setBlock(block);
         TrainingSessionTemplate saved = sessionRepository.save(entity);
         return sessionMapper.toDetailResponse(saved,Map.of());
     }
@@ -73,9 +81,11 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     @Override
     @Transactional
     public TrainingSessionTemplateDetailResponse updateSession(Long id, TrainingSessionTemplateRequest request) {
+        Block block = blockRepository.findById(request.blockId())
+                .orElseThrow(() -> new ResourceNotFoundException("Block", "id", request.blockId()));
         TrainingSessionTemplate entity = sessionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(TSESSIONT, "id", id));
-
+        entity.setBlock(block);
         sessionMapper.updateEntityFromRequest(request, entity);
         TrainingSessionTemplate saved = sessionRepository.save(entity);
         return sessionMapper.toDetailResponse(saved, Map.of());
