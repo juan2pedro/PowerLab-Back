@@ -1,18 +1,20 @@
 package com.jpmt.powerlab.services;
 
-import com.jpmt.powerlab.models.domain.Block;
-import org.springframework.stereotype.Service;
+import com.jpmt.powerlab.models.dto.block.BlockRequest;
+import com.jpmt.powerlab.models.dto.block.BlockResponse;
 
 import java.util.List;
 
-@Service
+
 public interface BlockService {
 
-    List<Block> findAll();
+    List<BlockResponse> findAll();
 
-    Block findById(Long id);
+    BlockResponse findById(Long id);
 
-    Block save(Block block);
+    BlockResponse save(BlockRequest block);
 
-    Block update(Long id, Block block);
+    BlockResponse update(Long id, BlockRequest block);
+
+    void deleteById(Long id);
 }

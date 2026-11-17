@@ -12,9 +12,11 @@ public interface BlockMapper {
     BlockResponse toResponse(Block entity);
 
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "id", ignore = true)
     Block toEntity(BlockRequest dto);
 
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "id", ignore = true)
     void updateEntityFromRequest(
             BlockRequest request,
            @MappingTarget Block entity
