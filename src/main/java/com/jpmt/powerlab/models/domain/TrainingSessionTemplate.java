@@ -3,7 +3,6 @@ package com.jpmt.powerlab.models.domain;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
@@ -22,13 +21,15 @@ public class TrainingSessionTemplate {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank
-    @Column(name = "block_name", length = 100)
-    private String blockName;
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "block_id", nullable = false)
+    private Block block;
 
     @NotNull
     @Min(1)
     @Column(name = "week_number")
+
     private Integer weekNumber;
 
     @NotNull

@@ -3,12 +3,11 @@ package com.jpmt.powerlab.models.dto.trainingsessiontemplate;
 import com.jpmt.powerlab.models.domain.ConjugatedDayType;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public record TrainingSessionTemplateRequest(
-        @NotBlank(message = "blockName is required")
-        String blockName,
+        @NotNull(message = "block is required")
+        Long blockId,
         @NotNull(message = "weekNumber is required")
         @Min(value = 1, message = "weekNumber must be at least 1")
         Integer weekNumber,

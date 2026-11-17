@@ -11,7 +11,12 @@ import java.util.Optional;
 
 @Repository
 public interface TrainingSessionTemplateRepository extends JpaRepository<TrainingSessionTemplate, Long> {
-    List<TrainingSessionTemplate> findByBlockNameAndWeekNumberOrderByDayIndexAsc(String blockName, Integer weekNumber);
+
+    @Override
+    @Query("SELECT t FROM TrainingSessionTemplate t JOIN FETCH t.block")
+    List<TrainingSessionTemplate> findAll();
+
+    List<TrainingSessionTemplate> findByBlock_IdAndWeekNumberOrderByDayIndexAsc(Long blockId, Integer weekNumber);
 
     @Query("SELECT t FROM TrainingSessionTemplate t " +
             "LEFT JOIN FETCH t.trainingSets st " +

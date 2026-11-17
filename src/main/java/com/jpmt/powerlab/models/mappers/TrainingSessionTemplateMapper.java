@@ -9,21 +9,24 @@ import org.mapstruct.*;
 
 import java.util.Map;
 
-@Mapper(componentModel = "spring", uses = TrainingSetTemplateMapper.class, unmappedTargetPolicy = ReportingPolicy.ERROR)
+@Mapper(componentModel = "spring", uses = {TrainingSetTemplateMapper.class, BlockMapper.class}, unmappedTargetPolicy = ReportingPolicy.ERROR)
 public interface TrainingSessionTemplateMapper  {
 
     @Mapping(source = "conjugatedDayType", target = "conjugatedDayType")
     @Mapping(source = "trainingSets", target = "setTemplates", qualifiedByName = "toResponseWithResolvedWeights")
+    @Mapping(source = "block", target = "block")
     public abstract TrainingSessionTemplateDetailResponse toDetailResponse(TrainingSessionTemplate entity, @Context Map<Long, ResolvedPrescription> resolved);
 
     public abstract TrainingSessionTemplateSummaryResponse toSummaryResponse(TrainingSessionTemplate entity);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "trainingSets", ignore = true)
+    @Mapping(target = "block", ignore = true)
     public abstract TrainingSessionTemplate toEntity(TrainingSessionTemplateRequest dto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "trainingSets", ignore = true)
+    @Mapping(target = "block", ignore = true)
     public abstract void updateEntityFromRequest(
             TrainingSessionTemplateRequest request,
             @MappingTarget TrainingSessionTemplate entity

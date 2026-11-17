@@ -1,6 +1,7 @@
 package com.jpmt.powerlab.models.dto.workoutsession;
 
 import com.jpmt.powerlab.models.domain.*;
+import com.jpmt.powerlab.models.dto.block.BlockResponse;
 import com.jpmt.powerlab.models.dto.exercise.ExerciseResponse;
 import com.jpmt.powerlab.models.dto.trainingsettemplate.TrainingSetTemplateResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -20,7 +21,7 @@ public record WorkoutDayResponse(
 ) {
     public record TemplateInfo(
             Long id,
-            String blockName,
+            BlockResponse block,
             Integer weekNumber,
             Integer dayIndex,
             String conjugateDayType,

@@ -15,7 +15,7 @@ public interface TrainingSessionService {
     // Session template
     List<TrainingSessionTemplateSummaryResponse> findAllSession();
 
-    List<TrainingSessionTemplateSummaryResponse> findAllSessionByBlockNameAndWeekNumber(String blockName, Integer weekNumber);
+    List<TrainingSessionTemplateSummaryResponse> findAllSessionByBlockIdAndWeekNumber(Long blockId, Integer weekNumber);
 
     TrainingSessionTemplateDetailResponse saveSession(TrainingSessionTemplateRequest trainingSessionTemplate);
 
