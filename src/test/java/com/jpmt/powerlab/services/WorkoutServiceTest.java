@@ -11,7 +11,6 @@ import com.jpmt.powerlab.models.mappers.WorkoutEntryMapper;
 import com.jpmt.powerlab.models.mappers.WorkoutSessionMapper;
 import com.jpmt.powerlab.models.mappers.WorkoutSetMapper;
 import com.jpmt.powerlab.repositories.*;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -234,7 +233,7 @@ class WorkoutServiceTest {
         assertEquals(expectedBlock, result.template().block());
     }
 
-    private static @NonNull List<WorkoutDayResponse.WorkoutDayEntry> getEntry() {
+    private static List<WorkoutDayResponse.WorkoutDayEntry> getEntry() {
         ExerciseResponse exerciseResponse = new ExerciseResponse(
                 1L,
                 "exercise name",
