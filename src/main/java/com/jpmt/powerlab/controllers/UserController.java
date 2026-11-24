@@ -28,8 +28,4 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.saveUser(user).orElseThrow(() -> new RuntimeException("Failed to register user")));
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<UserResponse> loginUser(@RequestBody @Valid RegisterRequest user) {
-        return ResponseEntity.status(HttpStatus.OK).body(userService.saveUser(user).orElseThrow(() -> new RuntimeException("Failed to login user")));
-    }
 }
