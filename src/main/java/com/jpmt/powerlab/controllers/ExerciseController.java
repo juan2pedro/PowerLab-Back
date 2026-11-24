@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -102,6 +103,7 @@ public class ExerciseController {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ApiErrorResponse.class)))
     })
+    @PreAuthorize("hasRole('COACH')")
     public ResponseEntity<ExerciseResponse> save(@Valid @RequestBody ExerciseRequest exercise) {
         ExerciseResponse savedExercise = this.service.save(exercise);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
@@ -130,6 +132,7 @@ public class ExerciseController {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ApiErrorResponse.class)))
     })
+    @PreAuthorize("hasRole('COACH')")
     public ResponseEntity<ExerciseResponse> update(@Parameter(description = "ID del ejercicio") @PathVariable Long id,
                                                    @Valid @RequestBody ExerciseRequest exercise) {
         return ResponseEntity.ok(this.service.update(id, exercise));
@@ -143,6 +146,7 @@ public class ExerciseController {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ApiErrorResponse.class)))
     })
+    @PreAuthorize("hasRole('COACH')")
     public ResponseEntity<Void> deleteById(@Parameter(description = "ID del ejercicio") @PathVariable Long id) {
         this.service.deleteById(id);
         return ResponseEntity.noContent().build();
