@@ -6,6 +6,7 @@ import com.jpmt.powerlab.models.dto.metrics.*;
 import com.jpmt.powerlab.repositories.TrainingSetTemplateRepository;
 import com.jpmt.powerlab.repositories.WorkoutSessionRepository;
 import com.jpmt.powerlab.repositories.WorkoutSetRepository;
+import com.jpmt.powerlab.security.CurrentUserProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,15 +40,17 @@ public class MetricsServiceImpl implements MetricsService {
     private final BodyweightProvider bodyweightProvider;
     private final CompLiftProvider compLiftProvider;
     private final SexProvider sexProvider;
+    private final CurrentUserProvider currentUserProvider;
 
     public MetricsServiceImpl(WorkoutSetRepository workoutSetRepository,
-                               WorkoutSessionRepository workoutSessionRepository,
-                               TrainingSetTemplateRepository setTemplateRepository,
-                               MetricsCalculator metricsCalculator,
-                               OneRepMaxProvider oneRepMaxProvider,
-                               BodyweightProvider bodyweightProvider,
-                               CompLiftProvider compLiftProvider,
-                               SexProvider sexProvider) {
+                              WorkoutSessionRepository workoutSessionRepository,
+                              TrainingSetTemplateRepository setTemplateRepository,
+                              MetricsCalculator metricsCalculator,
+                              OneRepMaxProvider oneRepMaxProvider,
+                              BodyweightProvider bodyweightProvider,
+                              CompLiftProvider compLiftProvider,
+                              SexProvider sexProvider,
+                              CurrentUserProvider currentUserProvider) {
         this.workoutSetRepository = workoutSetRepository;
         this.workoutSessionRepository = workoutSessionRepository;
         this.setTemplateRepository = setTemplateRepository;
@@ -56,6 +59,7 @@ public class MetricsServiceImpl implements MetricsService {
         this.bodyweightProvider = bodyweightProvider;
         this.compLiftProvider = compLiftProvider;
         this.sexProvider = sexProvider;
+        this.currentUserProvider = currentUserProvider;
     }
 
     // ============================================================================
@@ -66,7 +70,7 @@ public class MetricsServiceImpl implements MetricsService {
     public MetricsResponse series(MetricsQuery query) {
         List<WorkoutSet> sets = workoutSetRepository.findForMetrics(
                 query.from(), query.to(), query.exerciseIds(), query.patterns(),
-                query.setFilter().setTypes());
+                query.setFilter().setTypes(), query.athleteId());
 
         // Precarga de sets de plantilla para el tonelaje planificado.
         // Se recogen los IDs de sesión-plantilla presentes en el resultado y se carga
@@ -286,7 +290,7 @@ public class MetricsServiceImpl implements MetricsService {
     // ============================================================================
 
     @Override
-    public PersonalRecordsResponse personalRecords(LocalDate from, LocalDate to,
+    public PersonalRecordsResponse personalRecords(Long athleteId, LocalDate from, LocalDate to,
                                                      List<Long> exerciseIds, List<MainPattern> patterns) {
         boolean hasExerciseIds = exerciseIds != null && !exerciseIds.isEmpty();
         boolean hasPatterns = patterns != null && !patterns.isEmpty();
@@ -300,7 +304,6 @@ public class MetricsServiceImpl implements MetricsService {
             throw new BadRequestException("El parámetro 'from' no puede ser posterior a 'to'.");
         }
 
-        Long athleteId = MetricsQuery.DEFAULT_ATHLETE_ID;
         List<Long> resolvedExerciseIds = exerciseIds;
         List<MainPattern> resolvedPatterns = patterns;
         if (!hasExerciseIds && !hasPatterns) {
@@ -309,7 +312,7 @@ public class MetricsServiceImpl implements MetricsService {
 
         List<WorkoutSet> sets = workoutSetRepository.findForMetrics(
                 resolvedFrom, resolvedTo, resolvedExerciseIds, resolvedPatterns,
-                SetFilter.WORKING_SETS.setTypes());
+                SetFilter.WORKING_SETS.setTypes(), athleteId);
 
         Map<Long, List<WorkoutSet>> byExercise = sets.stream()
                 .collect(Collectors.groupingBy(ws -> ws.getWorkoutEntry().getExercise().getId(),
@@ -426,8 +429,7 @@ public class MetricsServiceImpl implements MetricsService {
     // ============================================================================
 
     @Override
-    public MetricsSummaryResponse summary(LocalDate adherenceFrom, LocalDate adherenceTo) {
-        Long athleteId = MetricsQuery.DEFAULT_ATHLETE_ID;
+    public MetricsSummaryResponse summary(Long athleteId, LocalDate adherenceFrom, LocalDate adherenceTo) {
         LocalDate today = LocalDate.now();
         LocalDate resolvedTo = adherenceTo != null ? adherenceTo : today;
         LocalDate resolvedFrom = adherenceFrom != null ? adherenceFrom : resolvedTo.minusDays(28);
@@ -436,7 +438,7 @@ public class MetricsServiceImpl implements MetricsService {
         }
 
         SbdSummary sbd = buildSbdSummary(athleteId, today);
-        ConsistencySummary consistency = buildConsistencySummary(resolvedFrom, resolvedTo, today);
+        ConsistencySummary consistency = buildConsistencySummary(athleteId, resolvedFrom, resolvedTo, today);
         TonnageSummary tonnage = buildTonnageSummary(athleteId, today);
 
         return new MetricsSummaryResponse(athleteId, sbd, consistency, tonnage);
@@ -449,12 +451,12 @@ public class MetricsServiceImpl implements MetricsService {
         if (configured.isPresent()) {
             return new ResolvedLift(configured.get(), true);
         }
-        return new ResolvedLift(bestExerciseIdForPattern(lift), false);
+        return new ResolvedLift(bestExerciseIdForPattern(athleteId, lift), false);
     }
 
-    private Long bestExerciseIdForPattern(MainPattern lift) {
+    private Long bestExerciseIdForPattern(Long athleteId, MainPattern lift) {
         List<WorkoutSet> sets = workoutSetRepository.findForMetrics(
-                EPOCH, LocalDate.now(), null, List.of(lift), SetFilter.WORKING_SETS.setTypes());
+                EPOCH, LocalDate.now(), null, List.of(lift), SetFilter.WORKING_SETS.setTypes(), athleteId);
         return sets.stream()
                 .filter(ws -> ws.getWeight() != null)
                 .max(Comparator.comparingDouble(WorkoutSet::getWeight))
@@ -473,7 +475,7 @@ public class MetricsServiceImpl implements MetricsService {
                 continue;
             }
             List<WorkoutSet> sets = workoutSetRepository.findForMetrics(
-                    EPOCH, today, List.of(resolved.exerciseId()), null, SetFilter.WORKING_SETS.setTypes());
+                    EPOCH, today, List.of(resolved.exerciseId()), null, SetFilter.WORKING_SETS.setTypes(), athleteId);
             if (sets.isEmpty()) {
                 continue;
             }
@@ -536,8 +538,9 @@ public class MetricsServiceImpl implements MetricsService {
         return round1(total);
     }
 
-    private ConsistencySummary buildConsistencySummary(LocalDate from, LocalDate to, LocalDate today) {
-        List<LocalDate> trainedDates = workoutSessionRepository.findDatesByStatusIn(List.of(Status.COMPLETED, Status.PARTIAL));
+    private ConsistencySummary buildConsistencySummary(Long athleteId, LocalDate from, LocalDate to, LocalDate today) {
+        List<LocalDate> trainedDates = workoutSessionRepository.findDatesByStatusIn(
+                List.of(Status.COMPLETED, Status.PARTIAL), athleteId);
         var trainedWeekStarts = trainedDates.stream()
                 .map(this::weekStart)
                 .collect(Collectors.toCollection(TreeSet::new));
@@ -547,7 +550,7 @@ public class MetricsServiceImpl implements MetricsService {
         double avgSessionsPerWeek = computeAvgSessionsPerWeek(trainedDates, today);
 
         List<WorkoutSession> plannedSessions = workoutSessionRepository
-                .findByDateBetweenAndTrainingSessionTemplateIsNotNull(from, to).stream()
+                .findByDateBetweenAndTrainingSessionTemplateIsNotNullAndOwnerId(from, to, athleteId).stream()
                 .filter(s -> !s.getDate().isAfter(today))
                 .toList();
 
@@ -602,7 +605,7 @@ public class MetricsServiceImpl implements MetricsService {
         // Tonelaje de por vida: cuenta todo el peso movido, calentamientos incluidos.
         // Mantiene el comportamiento previo (el filtro llegaba a null = sin filtrar).
         List<WorkoutSet> allSets = workoutSetRepository.findForMetrics(
-                EPOCH, today, null, null, SetFilter.ALL_SETS.setTypes());
+                EPOCH, today, null, null, SetFilter.ALL_SETS.setTypes(), athleteId);
 
         double cumulative = 0;
         List<TonnageMilestoneCatalog.Entry> catalog = TonnageMilestoneCatalog.MILESTONES;

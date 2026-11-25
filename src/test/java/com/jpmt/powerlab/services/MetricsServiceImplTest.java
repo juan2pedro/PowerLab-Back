@@ -6,6 +6,7 @@ import com.jpmt.powerlab.models.dto.metrics.*;
 import com.jpmt.powerlab.repositories.TrainingSetTemplateRepository;
 import com.jpmt.powerlab.repositories.WorkoutSessionRepository;
 import com.jpmt.powerlab.repositories.WorkoutSetRepository;
+import com.jpmt.powerlab.security.CurrentUserProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,6 +42,8 @@ class MetricsServiceImplTest {
     private CompLiftProvider compLiftProvider;
     @Mock
     private SexProvider sexProvider;
+    @Mock
+    private CurrentUserProvider currentUserProvider;
 
     private MetricsServiceImpl metricsService;
     private long idCounter = 1;
@@ -48,14 +51,16 @@ class MetricsServiceImplTest {
     @BeforeEach
     void setUp() {
         metricsService = new MetricsServiceImpl(workoutSetRepository, workoutSessionRepository, setTemplateRepository,
-                metricsCalculator, oneRepMaxProvider, bodyweightProvider, compLiftProvider, sexProvider);
+                metricsCalculator, oneRepMaxProvider, bodyweightProvider, compLiftProvider, sexProvider,
+                currentUserProvider);
 
         // Defaults sensatos para no tener que estubar todo en cada test; cada test sobreescribe lo que necesita.
         lenient().when(setTemplateRepository.findBySessionTemplateIdIn(any())).thenReturn(List.of());
-        lenient().when(workoutSetRepository.findForMetrics(any(), any(), any(), any(), any())).thenReturn(List.of());
-        lenient().when(workoutSessionRepository.findDatesByStatusIn(any())).thenReturn(List.of());
-        lenient().when(workoutSessionRepository.findByDateBetweenAndTrainingSessionTemplateIsNotNull(any(), any()))
+        lenient().when(workoutSetRepository.findForMetrics(any(), any(), any(), any(), any(), any())).thenReturn(List.of());
+        lenient().when(workoutSessionRepository.findDatesByStatusIn(any(), any())).thenReturn(List.of());
+        lenient().when(workoutSessionRepository.findByDateBetweenAndTrainingSessionTemplateIsNotNullAndOwnerId(any(), any(), any()))
                 .thenReturn(List.of());
+        lenient().when(currentUserProvider.currentUserId()).thenReturn(1L);
         lenient().when(bodyweightProvider.bodyweightKg(any(), any())).thenReturn(88.5);
         lenient().when(sexProvider.sex(any())).thenReturn(Sex.MALE);
         lenient().when(compLiftProvider.compLiftExerciseId(any(), any())).thenReturn(Optional.empty());
@@ -122,10 +127,10 @@ class MetricsServiceImplTest {
         WorkoutSet set1 = set(entry(session1, exercise), 100.0, 5, 8.0);
         WorkoutSet set2 = set(entry(session2, exercise), 105.0, 5, 8.0);
 
-        when(workoutSetRepository.findForMetrics(any(), any(), isNull(), isNull(), eq(SetFilter.WORKING_SETS.setTypes())))
+        when(workoutSetRepository.findForMetrics(any(), any(), isNull(), isNull(), eq(SetFilter.WORKING_SETS.setTypes()), anyLong()))
                 .thenReturn(List.of(set1, set2));
 
-        MetricsQuery query = MetricsQuery.normalized(
+        MetricsQuery query = MetricsQuery.normalized(1L,
                 LocalDate.of(2020, 12, 1), LocalDate.of(2021, 1, 31),
                 MetricsPeriod.WEEK, MetricsGroupBy.NONE, SetFilter.WORKING_SETS, null, null);
 
@@ -144,10 +149,10 @@ class MetricsServiceImplTest {
         WorkoutSession freeSession = session(LocalDate.now(), null);
         WorkoutSet freeSet = set(entry(freeSession, exercise), 100.0, 5, 8.0);
 
-        when(workoutSetRepository.findForMetrics(any(), any(), isNull(), isNull(), eq(SetFilter.WORKING_SETS.setTypes())))
+        when(workoutSetRepository.findForMetrics(any(), any(), isNull(), isNull(), eq(SetFilter.WORKING_SETS.setTypes()), anyLong()))
                 .thenReturn(List.of(freeSet));
 
-        MetricsQuery query = MetricsQuery.normalized(
+        MetricsQuery query = MetricsQuery.normalized(1L,
                 LocalDate.now().minusDays(7), LocalDate.now(),
                 MetricsPeriod.BLOCK, MetricsGroupBy.NONE, SetFilter.WORKING_SETS, null, null);
 
@@ -170,10 +175,10 @@ class MetricsServiceImplTest {
         WorkoutSet highRepsLater = set(entry(s2, exercise), 100.0, 8, 8.0);
         WorkoutSet highRepsEarlier = set(entry(s3, exercise), 100.0, 8, 8.0);
 
-        when(workoutSetRepository.findForMetrics(any(), any(), eq(List.of(1L)), isNull(), eq(SetFilter.WORKING_SETS.setTypes())))
+        when(workoutSetRepository.findForMetrics(any(), any(), eq(List.of(1L)), isNull(), eq(SetFilter.WORKING_SETS.setTypes()), anyLong()))
                 .thenReturn(List.of(lowReps, highRepsLater, highRepsEarlier));
 
-        PersonalRecordsResponse response = metricsService.personalRecords(null, null, List.of(1L), null);
+        PersonalRecordsResponse response = metricsService.personalRecords(1L,null, null, List.of(1L), null);
 
         ExercisePrs prs = response.exercises().get(0);
         assertEquals(100.0, prs.heaviestSet().weight());
@@ -189,10 +194,10 @@ class MetricsServiceImplTest {
         WorkoutSet fiveRepSet = set(entry(s1, exercise), 120.0, 5, 8.0);
         WorkoutSet threeRepSet = set(entry(s2, exercise), 140.0, 3, 9.0);
 
-        when(workoutSetRepository.findForMetrics(any(), any(), eq(List.of(1L)), isNull(), eq(SetFilter.WORKING_SETS.setTypes())))
+        when(workoutSetRepository.findForMetrics(any(), any(), eq(List.of(1L)), isNull(), eq(SetFilter.WORKING_SETS.setTypes()), anyLong()))
                 .thenReturn(List.of(fiveRepSet, threeRepSet));
 
-        PersonalRecordsResponse response = metricsService.personalRecords(null, null, List.of(1L), null);
+        PersonalRecordsResponse response = metricsService.personalRecords(1L,null, null, List.of(1L), null);
 
         ExercisePrs prs = response.exercises().get(0);
         assertEquals(2, prs.repMaxes().size());
@@ -208,12 +213,12 @@ class MetricsServiceImplTest {
         WorkoutSet lowBarSet = set(entry(session, lowBar), 150.0, 3, 8.0);
         WorkoutSet highBarSet = set(entry(session, highBar), 120.0, 3, 8.0);
 
-        when(workoutSetRepository.findForMetrics(any(), any(), isNull(), eq(List.of(MainPattern.SQUAT)), eq(SetFilter.WORKING_SETS.setTypes())))
+        when(workoutSetRepository.findForMetrics(any(), any(), isNull(), eq(List.of(MainPattern.SQUAT)), eq(SetFilter.WORKING_SETS.setTypes()), anyLong()))
                 .thenReturn(List.of(lowBarSet, highBarSet));
-        when(workoutSetRepository.findForMetrics(any(), any(), eq(List.of(1L)), isNull(), eq(SetFilter.WORKING_SETS.setTypes())))
+        when(workoutSetRepository.findForMetrics(any(), any(), eq(List.of(1L)), isNull(), eq(SetFilter.WORKING_SETS.setTypes()), anyLong()))
                 .thenReturn(List.of(lowBarSet));
 
-        PersonalRecordsResponse response = metricsService.personalRecords(null, null, null, null);
+        PersonalRecordsResponse response = metricsService.personalRecords(1L,null, null, null, null);
 
         assertEquals(1, response.exercises().size());
         assertEquals(1L, response.exercises().get(0).exerciseId());
@@ -227,10 +232,10 @@ class MetricsServiceImplTest {
         WorkoutSet validSingle = set(entry(s1, exercise), 180.0, 1, 9.0);
         WorkoutSet failedSingle = set(entry(s2, exercise), 200.0, 1, 11.0);
 
-        when(workoutSetRepository.findForMetrics(any(), any(), eq(List.of(1L)), isNull(), eq(SetFilter.WORKING_SETS.setTypes())))
+        when(workoutSetRepository.findForMetrics(any(), any(), eq(List.of(1L)), isNull(), eq(SetFilter.WORKING_SETS.setTypes()), anyLong()))
                 .thenReturn(List.of(validSingle, failedSingle));
 
-        ExercisePrs prs = metricsService.personalRecords(null, null, List.of(1L), null).exercises().get(0);
+        ExercisePrs prs = metricsService.personalRecords(1L,null, null, List.of(1L), null).exercises().get(0);
 
         assertEquals(180.0, prs.heaviestSet().weight());
         // El fallado de 200 no pisa el récord válido: repMaxes se queda en 180 y el fallo va a failedRepMaxes.
@@ -250,10 +255,10 @@ class MetricsServiceImplTest {
         WorkoutSet failedHeavier = set(entry(s2, exercise), 130.0, 3, 11.0);
         WorkoutSet validThree = set(entry(s3, exercise), 110.0, 3, 8.0);
 
-        when(workoutSetRepository.findForMetrics(any(), any(), eq(List.of(1L)), isNull(), eq(SetFilter.WORKING_SETS.setTypes())))
+        when(workoutSetRepository.findForMetrics(any(), any(), eq(List.of(1L)), isNull(), eq(SetFilter.WORKING_SETS.setTypes()), anyLong()))
                 .thenReturn(List.of(failedLighter, failedHeavier, validThree));
 
-        ExercisePrs prs = metricsService.personalRecords(null, null, List.of(1L), null).exercises().get(0);
+        ExercisePrs prs = metricsService.personalRecords(1L,null, null, List.of(1L), null).exercises().get(0);
 
         assertEquals(130.0, prs.failedRepMaxes().stream().filter(rm -> rm.reps() == 3).findFirst().orElseThrow().weight());
         assertEquals(110.0, prs.repMaxes().stream().filter(rm -> rm.reps() == 3).findFirst().orElseThrow().weight());
@@ -265,11 +270,11 @@ class MetricsServiceImplTest {
         WorkoutSession s = session(LocalDate.of(2024, 5, 1), null);
         WorkoutSet validSet = set(entry(s, exercise), 150.0, 3, 8.0);
 
-        when(workoutSetRepository.findForMetrics(any(), any(), eq(List.of(1L)), isNull(), eq(SetFilter.WORKING_SETS.setTypes())))
+        when(workoutSetRepository.findForMetrics(any(), any(), eq(List.of(1L)), isNull(), eq(SetFilter.WORKING_SETS.setTypes()), anyLong()))
                 .thenReturn(List.of(validSet));
         when(oneRepMaxProvider.referenceMax(any(), eq(1L))).thenReturn(Optional.of(185.0));
 
-        ExercisePrs prs = metricsService.personalRecords(null, null, List.of(1L), null).exercises().get(0);
+        ExercisePrs prs = metricsService.personalRecords(1L,null, null, List.of(1L), null).exercises().get(0);
 
         assertEquals(185.0, prs.referenceMax());
     }
@@ -280,10 +285,10 @@ class MetricsServiceImplTest {
         WorkoutSession s = session(LocalDate.of(2024, 5, 1), null);
         WorkoutSet validSet = set(entry(s, exercise), 150.0, 3, 8.0);
 
-        when(workoutSetRepository.findForMetrics(any(), any(), eq(List.of(1L)), isNull(), eq(SetFilter.WORKING_SETS.setTypes())))
+        when(workoutSetRepository.findForMetrics(any(), any(), eq(List.of(1L)), isNull(), eq(SetFilter.WORKING_SETS.setTypes()), anyLong()))
                 .thenReturn(List.of(validSet));
 
-        ExercisePrs prs = metricsService.personalRecords(null, null, List.of(1L), null).exercises().get(0);
+        ExercisePrs prs = metricsService.personalRecords(1L,null, null, List.of(1L), null).exercises().get(0);
 
         assertNull(prs.referenceMax());
     }
@@ -291,13 +296,13 @@ class MetricsServiceImplTest {
     @Test
     void personalRecords_fromAfterTo_throwsBadRequest() {
         assertThrows(BadRequestException.class,
-                () -> metricsService.personalRecords(LocalDate.now(), LocalDate.now().minusDays(1), null, null));
+                () -> metricsService.personalRecords(1L,LocalDate.now(), LocalDate.now().minusDays(1), null, null));
     }
 
     @Test
     void personalRecords_exerciseIdsAndPatterns_throwsBadRequest() {
         assertThrows(BadRequestException.class,
-                () -> metricsService.personalRecords(null, null, List.of(1L), List.of(MainPattern.SQUAT)));
+                () -> metricsService.personalRecords(1L,null, null, List.of(1L), List.of(MainPattern.SQUAT)));
     }
 
     // ============================================================================
@@ -313,7 +318,7 @@ class MetricsServiceImplTest {
         LocalDate trainedFiveWeeksAgo = thisWeekStart.minusWeeks(5).plusDays(2);
         LocalDate trainedSixWeeksAgo = thisWeekStart.minusWeeks(6).plusDays(2);
 
-        when(workoutSessionRepository.findDatesByStatusIn(any()))
+        when(workoutSessionRepository.findDatesByStatusIn(any(), eq(1L)))
                 .thenReturn(List.of(trainedSixWeeksAgo, trainedFiveWeeksAgo, trainedLastWeek));
 
         List<WorkoutSession> planned = List.of(
@@ -321,10 +326,10 @@ class MetricsServiceImplTest {
                 plannedSession(today.minusDays(10), Status.COMPLETED),
                 plannedSession(today.minusDays(15), Status.PARTIAL),
                 plannedSession(today.minusDays(20), Status.SKIPPED));
-        when(workoutSessionRepository.findByDateBetweenAndTrainingSessionTemplateIsNotNull(any(), any()))
+        when(workoutSessionRepository.findByDateBetweenAndTrainingSessionTemplateIsNotNullAndOwnerId(any(), any(), eq(1L)))
                 .thenReturn(planned);
 
-        MetricsSummaryResponse response = metricsService.summary(null, null);
+        MetricsSummaryResponse response = metricsService.summary(1L,null, null);
 
         assertEquals(1, response.consistency().currentWeekStreak());
         assertEquals(2, response.consistency().longestWeekStreak());
@@ -339,9 +344,9 @@ class MetricsServiceImplTest {
     /** Resuelve el movimiento por patrón (sin comp lift configurado) y luego por ejercicio. */
     private void stubLift(MainPattern pattern, long exerciseId, List<WorkoutSet> sets) {
         when(workoutSetRepository.findForMetrics(any(), any(), isNull(), eq(List.of(pattern)),
-                eq(SetFilter.WORKING_SETS.setTypes()))).thenReturn(sets);
+                eq(SetFilter.WORKING_SETS.setTypes()), anyLong())).thenReturn(sets);
         when(workoutSetRepository.findForMetrics(any(), any(), eq(List.of(exerciseId)), isNull(),
-                eq(SetFilter.WORKING_SETS.setTypes()))).thenReturn(sets);
+                eq(SetFilter.WORKING_SETS.setTypes()), anyLong())).thenReturn(sets);
     }
 
     private List<WorkoutSet> liftSets(long exerciseId, String name, MainPattern pattern,
@@ -361,7 +366,7 @@ class MetricsServiceImplTest {
         // Si DOTS se calculara sobre otro total, el stub quedaría sin usar y Mockito lo delataría.
         when(metricsCalculator.dots(560.0, 88.5, Sex.MALE)).thenReturn(391.3);
 
-        SbdSummary sbd = metricsService.summary(null, null).sbd();
+        SbdSummary sbd = metricsService.summary(1L,null, null).sbd();
 
         assertEquals(560.0, sbd.bestRealTotal());
         LiftSummary squat = sbd.lifts().stream().filter(l -> l.lift() == MainPattern.SQUAT).findFirst().orElseThrow();
@@ -382,7 +387,7 @@ class MetricsServiceImplTest {
         stubLift(MainPattern.BENCH, 2L, liftSets(2L, "Press banca", MainPattern.BENCH, 120.0, 110.0));
         stubLift(MainPattern.DEADLIFT, 3L, liftSets(3L, "Peso muerto", MainPattern.DEADLIFT, 240.0, 230.0));
 
-        SbdSummary sbd = metricsService.summary(null, null).sbd();
+        SbdSummary sbd = metricsService.summary(1L,null, null).sbd();
 
         LiftSummary squatSummary = sbd.lifts().stream()
                 .filter(l -> l.lift() == MainPattern.SQUAT).findFirst().orElseThrow();
@@ -400,7 +405,7 @@ class MetricsServiceImplTest {
         stubLift(MainPattern.BENCH, 2L, liftSets(2L, "Press banca", MainPattern.BENCH, 120.0, 110.0));
         stubLift(MainPattern.DEADLIFT, 3L, List.of(set(entry(s, deadlift), 240.0, 3, 8.0)));
 
-        SbdSummary sbd = metricsService.summary(null, null).sbd();
+        SbdSummary sbd = metricsService.summary(1L,null, null).sbd();
 
         assertNull(sbd.bestRealTotal());
         assertNull(sbd.dots());
@@ -415,10 +420,10 @@ class MetricsServiceImplTest {
 
         when(compLiftProvider.compLiftExerciseId(any(), eq(MainPattern.SQUAT))).thenReturn(Optional.of(1L));
         when(workoutSetRepository.findForMetrics(any(), any(), eq(List.of(1L)), isNull(),
-                eq(SetFilter.WORKING_SETS.setTypes()))).thenReturn(squatSets);
+                eq(SetFilter.WORKING_SETS.setTypes()), anyLong())).thenReturn(squatSets);
         when(oneRepMaxProvider.referenceMax(any(), eq(1L))).thenReturn(Optional.of(210.0));
 
-        SbdSummary sbd = metricsService.summary(null, null).sbd();
+        SbdSummary sbd = metricsService.summary(1L,null, null).sbd();
 
         LiftSummary squatSummary = sbd.lifts().stream()
                 .filter(l -> l.lift() == MainPattern.SQUAT).findFirst().orElseThrow();
@@ -429,6 +434,6 @@ class MetricsServiceImplTest {
     @Test
     void summary_fromAfterTo_throwsBadRequest() {
         assertThrows(BadRequestException.class,
-                () -> metricsService.summary(LocalDate.now(), LocalDate.now().minusDays(1)));
+                () -> metricsService.summary(1L,LocalDate.now(), LocalDate.now().minusDays(1)));
     }
 }

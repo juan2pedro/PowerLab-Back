@@ -18,6 +18,7 @@ public interface WorkoutSessionMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "trainingSessionTemplate", ignore = true)
     @Mapping(target = "entries", ignore = true)
+    @Mapping(target = "owner", ignore = true)
     WorkoutSession toEntity(WorkoutSessionRequest dto);
 
     @Mapping(source = "trainingSessionTemplate.id", target = "trainingSessionTemplateId")

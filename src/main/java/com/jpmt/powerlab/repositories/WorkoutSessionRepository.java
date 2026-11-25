@@ -22,26 +22,32 @@ public interface WorkoutSessionRepository extends JpaRepository<WorkoutSession, 
             "entries",
             "entries.exercise"
     })
-    Optional<WorkoutSession> findHeaderById(Long id);
+    Optional<WorkoutSession> findByIdAndOwnerId(Long id, Long ownerId);
 
     @Query("SELECT DISTINCT ws FROM WorkoutSession ws " +
             "LEFT JOIN FETCH ws.entries e " +
             "LEFT JOIN FETCH e.exercise " +
             "WHERE ws.date = :date " +
+            "AND ws.owner.id = :ownerId " +
             "ORDER BY ws.id DESC")
-    List<WorkoutSession> findFullByDate(@Param("date") LocalDate date);
+    List<WorkoutSession> findFullByDate(@Param("date") LocalDate date, @Param("ownerId") Long ownerId);
 
-    boolean existsByDate(LocalDate date);
+    boolean existsByDateAndOwner_Id(LocalDate date, Long ownerId);
+
+    boolean existsByIdAndOwner_Id(Long id, Long ownerId);
 
     @Query("SELECT DISTINCT ws FROM WorkoutSession ws " +
             "LEFT JOIN FETCH ws.entries e " +
-            "WHERE ws.date BETWEEN :startDate AND :endDate")
+            "WHERE ws.owner.id = :ownerId " +
+            "AND ws.date BETWEEN :startDate AND :endDate")
     List<WorkoutSession> findFullByDateRange(
             @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate);
+            @Param("endDate") LocalDate endDate,
+            @Param("ownerId") Long ownerId);
 
-    @Query("SELECT s.date FROM WorkoutSession s WHERE s.status IN :statuses ORDER BY s.date")
-    List<LocalDate> findDatesByStatusIn(@Param("statuses") Collection<Status> statuses);
+    @Query("SELECT s.date FROM WorkoutSession s WHERE s.status IN :statuses AND s.owner.id = :ownerId ORDER BY s.date")
+    List<LocalDate> findDatesByStatusIn(@Param("statuses") Collection<Status> statuses,
+                                        @Param("ownerId") Long ownerId);
 
-    List<WorkoutSession> findByDateBetweenAndTrainingSessionTemplateIsNotNull(LocalDate from, LocalDate to);
+    List<WorkoutSession> findByDateBetweenAndTrainingSessionTemplateIsNotNullAndOwnerId(LocalDate from, LocalDate to, Long ownerId);
 }

@@ -6,6 +6,7 @@ import com.jpmt.powerlab.models.dto.block.BlockRequest;
 import com.jpmt.powerlab.models.dto.block.BlockResponse;
 import com.jpmt.powerlab.models.mappers.BlockMapper;
 import com.jpmt.powerlab.repositories.BlockRepository;
+import com.jpmt.powerlab.security.CurrentUserProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,23 +17,26 @@ public class BlockServiceImpl implements BlockService{
 
     private final BlockRepository repository;
     private final BlockMapper blockMapper;
+    private final CurrentUserProvider currentUserProvider;
 
-    public BlockServiceImpl(BlockRepository repository, BlockMapper blockMapper) {
+    public BlockServiceImpl(BlockRepository repository, BlockMapper blockMapper, CurrentUserProvider currentUserProvider) {
         this.repository = repository;
         this.blockMapper = blockMapper;
+        this.currentUserProvider = currentUserProvider;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<BlockResponse> findAll() {
-        List<Block> entities = repository.findAll();
+        List<Block> entities = repository.findByOwner_Id(currentUserProvider.currentUserId());
         return entities.stream().map(blockMapper::toResponse).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public BlockResponse findById(Long id) {
-        Block entity = repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Block not found with id: " + id));
+        Block entity = repository.findByIdAndOwner_Id(id, currentUserProvider.currentUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Block not found with id: " + id));
         return blockMapper.toResponse(entity);
 
     }
@@ -41,6 +45,7 @@ public class BlockServiceImpl implements BlockService{
     @Override
     public BlockResponse save(BlockRequest block) {
         Block entity = blockMapper.toEntity(block);
+        entity.setOwner(currentUserProvider.currentUser());
         Block saved = repository.save(entity);
         return blockMapper.toResponse(saved);
     }
@@ -48,7 +53,8 @@ public class BlockServiceImpl implements BlockService{
     @Transactional
     @Override
     public BlockResponse update(Long id, BlockRequest block) {
-        Block entity = repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Block not found with id: " + id));
+        Block entity = repository.findByIdAndOwner_Id(id, currentUserProvider.currentUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Block not found with id: " + id));
         blockMapper.updateEntityFromRequest(block, entity);
         Block updated = repository.save(entity);
         return blockMapper.toResponse(updated);
@@ -57,7 +63,7 @@ public class BlockServiceImpl implements BlockService{
     @Transactional
     @Override
     public void deleteById(Long id) {
-        if (!repository.existsById(id)) {
+        if (!repository.existsByIdAndOwner_Id(id, currentUserProvider.currentUserId())) {
             throw new ResourceNotFoundException("Block", "id", id);
         }
         repository.deleteById(id);

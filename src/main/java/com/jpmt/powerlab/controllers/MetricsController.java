@@ -3,6 +3,7 @@ package com.jpmt.powerlab.controllers;
 import com.jpmt.powerlab.models.domain.MainPattern;
 import com.jpmt.powerlab.models.dto.ApiErrorResponse;
 import com.jpmt.powerlab.models.dto.metrics.*;
+import com.jpmt.powerlab.services.AuthorizationService;
 import com.jpmt.powerlab.services.MetricsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -27,10 +28,15 @@ import java.util.List;
 public class MetricsController {
 
     private final MetricsService metricsService;
+    private final AuthorizationService authorizationService;
 
-    public MetricsController(MetricsService metricsService) {
+    public MetricsController(MetricsService metricsService, AuthorizationService authorizationService) {
         this.metricsService = metricsService;
+        this.authorizationService = authorizationService;
     }
+
+    private static final String ATHLETE_PARAM_DESC =
+            "ID del atleta a consultar. Por defecto, el usuario actual. Un coach puede pasar el ID de un atleta suyo (relacion activa); si no lo es, 403.";
 
     @GetMapping
     @Operation(
@@ -67,9 +73,12 @@ public class MetricsController {
             @Parameter(description = "Filtra por IDs de ejercicio (excluyente con patterns)")
             @RequestParam(required = false) List<Long> exerciseIds,
             @Parameter(description = "Filtra por patrones principales (excluyente con exerciseIds)")
-            @RequestParam(required = false) List<MainPattern> patterns) {
+            @RequestParam(required = false) List<MainPattern> patterns,
+            @Parameter(description = ATHLETE_PARAM_DESC)
+            @RequestParam(required = false) Long athleteId) {
 
-        MetricsQuery query = MetricsQuery.normalized(from, to, period, groupBy, setFilter, exerciseIds, patterns);
+        Long resolvedAthlete = authorizationService.resolveReadableAthlete(athleteId);
+        MetricsQuery query = MetricsQuery.normalized(resolvedAthlete, from, to, period, groupBy, setFilter, exerciseIds, patterns);
         return ResponseEntity.ok(metricsService.series(query));
     }
 
@@ -102,9 +111,12 @@ public class MetricsController {
             @Parameter(description = "Filtra por IDs de ejercicio (excluyente con patterns)")
             @RequestParam(required = false) List<Long> exerciseIds,
             @Parameter(description = "Filtra por patrones principales (excluyente con exerciseIds)")
-            @RequestParam(required = false) List<MainPattern> patterns) {
+            @RequestParam(required = false) List<MainPattern> patterns,
+            @Parameter(description = ATHLETE_PARAM_DESC)
+            @RequestParam(required = false) Long athleteId) {
 
-        return ResponseEntity.ok(metricsService.personalRecords(from, to, exerciseIds, patterns));
+        Long resolvedAthlete = authorizationService.resolveReadableAthlete(athleteId);
+        return ResponseEntity.ok(metricsService.personalRecords(resolvedAthlete, from, to, exerciseIds, patterns));
     }
 
     @GetMapping("/summary")
@@ -133,8 +145,11 @@ public class MetricsController {
             @Parameter(description = "Fecha inicio de la ventana de adherencia. Por defecto: hace 28 días")
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate adherenceFrom,
             @Parameter(description = "Fecha fin de la ventana de adherencia. Por defecto: hoy")
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate adherenceTo) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate adherenceTo,
+            @Parameter(description = ATHLETE_PARAM_DESC)
+            @RequestParam(required = false) Long athleteId) {
 
-        return ResponseEntity.ok(metricsService.summary(adherenceFrom, adherenceTo));
+        Long resolvedAthlete = authorizationService.resolveReadableAthlete(athleteId);
+        return ResponseEntity.ok(metricsService.summary(resolvedAthlete, adherenceFrom, adherenceTo));
     }
 }

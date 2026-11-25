@@ -18,6 +18,7 @@ import com.jpmt.powerlab.models.mappers.WorkoutEntryMapper;
 import com.jpmt.powerlab.models.mappers.WorkoutSessionMapper;
 import com.jpmt.powerlab.models.mappers.WorkoutSetMapper;
 import com.jpmt.powerlab.repositories.*;
+import com.jpmt.powerlab.security.CurrentUserProvider;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -40,6 +41,7 @@ public class WorkoutServiceImpl implements WorkoutService {
     private final WorkoutEntryMapper entryMapper;
     private final WorkoutSetMapper workoutSetMapper;
     private final PrescribedWeightResolver prescribedWeightResolver;
+    private final CurrentUserProvider currentUserProvider;
 
     public WorkoutServiceImpl(WorkoutSessionRepository sessionRepository,
                               WorkoutEntryRepository entryRepository,
@@ -48,7 +50,7 @@ public class WorkoutServiceImpl implements WorkoutService {
                               ExerciseRepository exerciseRepository, WorkoutSetRepository workoutSetRepository,
                               WorkoutSessionMapper workoutSessionMapper,
                               WorkoutEntryMapper entryMapper, WorkoutSetMapper workoutSetMapper,
-                              PrescribedWeightResolver prescribedWeightResolver) {
+                              PrescribedWeightResolver prescribedWeightResolver, CurrentUserProvider currentUserProvider) {
         this.sessionRepository = sessionRepository;
         this.entryRepository = entryRepository;
         this.templateRepository = templateRepository;
@@ -59,6 +61,7 @@ public class WorkoutServiceImpl implements WorkoutService {
         this.entryMapper = entryMapper;
         this.workoutSetMapper = workoutSetMapper;
         this.prescribedWeightResolver = prescribedWeightResolver;
+        this.currentUserProvider = currentUserProvider;
     }
 
     @Transactional
@@ -67,6 +70,7 @@ public class WorkoutServiceImpl implements WorkoutService {
         assertNoWorkoutOnDate(sessionRequest.date());
         WorkoutSession session = workoutSessionMapper.toEntity(sessionRequest);
         applyDefaultStatus(session);
+        session.setOwner(currentUserProvider.currentUser());
 
         if (sessionRequest.trainingSessionTemplateId() != null) {
             TrainingSessionTemplate template = templateRepository.findById(sessionRequest.trainingSessionTemplateId())
@@ -88,6 +92,7 @@ public class WorkoutServiceImpl implements WorkoutService {
         WorkoutSession session = workoutSessionMapper.toEntity(sessionRequest);
         applyDefaultStatus(session);
         session.setTrainingSessionTemplate(template);
+        session.setOwner(currentUserProvider.currentUser());
 
         WorkoutSession saved = sessionRepository.save(session);
         return workoutSessionMapper.toDetailResponse(saved);
@@ -103,7 +108,8 @@ public class WorkoutServiceImpl implements WorkoutService {
     @Transactional
     @Override
     public WorkoutSessionDetailResponse updateWorkoutStatus(Long id, Status status) {
-        WorkoutSession session = sessionRepository.findById(id)
+        Long ownerId = currentUserProvider.currentUserId();
+        WorkoutSession session = sessionRepository.findByIdAndOwnerId(id, ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("WorkoutSession", "id", id));
         session.setStatus(status);
         return workoutSessionMapper.toDetailResponse(sessionRepository.save(session));
@@ -114,14 +120,16 @@ public class WorkoutServiceImpl implements WorkoutService {
      * Permitir duplicados rompía el GET /day, que devuelve un único workout.
      */
     private void assertNoWorkoutOnDate(LocalDate date) {
-        if (date != null && sessionRepository.existsByDate(date)) {
+        Long ownerId = currentUserProvider.currentUserId();
+        if (date != null && sessionRepository.existsByDateAndOwner_Id(date, ownerId)) {
             throw new BadRequestException("Ya existe un entreno para el " + date);
         }
     }
 
     @Override
     public List<WorkoutSessionSummaryResponse> findAllWorkoutSessionsByDateRange(LocalDate from, LocalDate to) {
-      List  <WorkoutSession> session = sessionRepository.findFullByDateRange(from, to);
+        Long ownerId = currentUserProvider.currentUserId();
+      List  <WorkoutSession> session = sessionRepository.findFullByDateRange(from, to, ownerId);
         return session.stream()
                 .map(workoutSessionMapper::toSummaryResponse)
                 .toList();
@@ -130,8 +138,9 @@ public class WorkoutServiceImpl implements WorkoutService {
     @Override
     @Transactional(readOnly = true)
     public Optional <WorkoutDayResponse> findFullDayByDate(LocalDate date) {
+        Long ownerId = currentUserProvider.currentUserId();
 
-        Optional<WorkoutSession> found = sessionRepository.findFullByDate(date).stream().findFirst();
+        Optional<WorkoutSession> found = sessionRepository.findFullByDate(date,ownerId).stream().findFirst();
 
         if (found.isEmpty()) {
             return Optional.empty();
@@ -151,7 +160,8 @@ public class WorkoutServiceImpl implements WorkoutService {
     @Override
     @Transactional(readOnly = true)
     public Optional<WorkoutDayResponse> findFullDayById(Long id) {
-        Optional<WorkoutSession> found = sessionRepository.findHeaderById(id);
+        Long ownerId = currentUserProvider.currentUserId();
+        Optional<WorkoutSession> found = sessionRepository.findByIdAndOwnerId(id, ownerId);
         if (found.isEmpty()){
             return Optional.empty();
         }
@@ -168,7 +178,8 @@ public class WorkoutServiceImpl implements WorkoutService {
     @Override
     @Transactional(readOnly = true)
     public WorkoutSessionDetailResponse findWorkoutById(Long id) {
-        WorkoutSession session = sessionRepository.findById(id)
+        Long ownerId = currentUserProvider.currentUserId();
+        WorkoutSession session = sessionRepository.findByIdAndOwnerId(id, ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("WorkoutSession", "id", id));
         return workoutSessionMapper.toDetailResponse(session);
     }
@@ -176,7 +187,8 @@ public class WorkoutServiceImpl implements WorkoutService {
     @Transactional
     @Override
     public void deleteWorkoutById(Long id) {
-        if (!sessionRepository.existsById(id)) {
+        Long ownerId = currentUserProvider.currentUserId();
+        if (!sessionRepository.existsByIdAndOwner_Id(id, ownerId)) {
             throw new ResourceNotFoundException("WorkoutSession", "id", id);
         }
         sessionRepository.deleteById(id);
@@ -185,7 +197,8 @@ public class WorkoutServiceImpl implements WorkoutService {
     @Transactional
     @Override
     public WorkoutEntryResponse saveWorkoutEntry(WorkoutEntryCreateRequest entryRequest) {
-        WorkoutSession session = sessionRepository.findById(entryRequest.sessionId())
+        Long ownerId = currentUserProvider.currentUserId();
+        WorkoutSession session = sessionRepository.findByIdAndOwnerId(entryRequest.sessionId(), ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("WorkoutSession", "id", entryRequest.sessionId()));
 
         Exercise exercise = exerciseRepository.findById(entryRequest.exerciseId())
@@ -208,7 +221,8 @@ public class WorkoutServiceImpl implements WorkoutService {
     @Transactional
     @Override
     public WorkoutEntryResponse updateEntry(Long id, WorkoutEntryUpdateRequest entryRequest) {
-        WorkoutEntry workoutEntry = entryRepository.findById(id)
+        Long ownerId = currentUserProvider.currentUserId();
+        WorkoutEntry workoutEntry = entryRepository.findByIdAndSession_Owner_Id(id,ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("WorkoutEntry", "id", id));
 
         entryMapper.updateEntityFromRequest(entryRequest, workoutEntry);
@@ -219,7 +233,8 @@ public class WorkoutServiceImpl implements WorkoutService {
     @Transactional
     @Override
     public void deleteWorkoutEntryById(Long id) {
-        if (!entryRepository.existsById(id)) {
+        Long ownerId = currentUserProvider.currentUserId();
+        if (!entryRepository.existsByIdAndSession_Owner_Id(id, ownerId)) {
             throw new ResourceNotFoundException("WorkoutEntry", "id", id);
         }
         entryRepository.deleteById(id);
@@ -235,7 +250,8 @@ public class WorkoutServiceImpl implements WorkoutService {
     @Transactional
     @Override
     public WorkoutSetResponse saveWorkoutSet(Long entryId, @Valid WorkoutSetRequest workoutSetRequest) {
-        WorkoutEntry workoutEntry = entryRepository.findById(entryId)
+        Long ownerId = currentUserProvider.currentUserId();
+        WorkoutEntry workoutEntry = entryRepository.findByIdAndSession_Owner_Id(entryId, ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("WorkoutEntry", "id", entryId));
 
         WorkoutSet set = workoutSetMapper.toEntity(workoutSetRequest);
@@ -248,7 +264,8 @@ public class WorkoutServiceImpl implements WorkoutService {
     @Transactional
     @Override
     public WorkoutDayResponse.WorkoutDayEntry addSetByExercise(Long workoutId, @Valid WorkoutSetWithExerciseRequest request) {
-        WorkoutSession session = sessionRepository.findHeaderById(workoutId)
+        Long ownerId = currentUserProvider.currentUserId();
+        WorkoutSession session = sessionRepository.findByIdAndOwnerId(workoutId, ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("WorkoutSession", "id", workoutId));
 
         if (session.getTrainingSessionTemplate() == null) {
@@ -312,7 +329,8 @@ public class WorkoutServiceImpl implements WorkoutService {
     @Transactional
     @Override
     public WorkoutSetResponse updateWorkoutSet(Long id, @Valid WorkoutSetRequest workoutSet) {
-        WorkoutSet existingSet = workoutSetRepository.findById(id)
+        Long ownerId = currentUserProvider.currentUserId();
+        WorkoutSet existingSet = workoutSetRepository.findByIdAndWorkoutEntry_Session_Owner_Id(id, ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("WorkoutSet", "id", id));
 
         workoutSetMapper.updateEntityFromRequest(workoutSet, existingSet);
@@ -323,7 +341,8 @@ public class WorkoutServiceImpl implements WorkoutService {
     @Transactional
     @Override
     public void deleteWorkoutSetById(Long id) {
-        if (!workoutSetRepository.existsById(id)) {
+        Long ownerId = currentUserProvider.currentUserId();
+        if (!workoutSetRepository.existsByIdAndWorkoutEntry_Session_Owner_Id(id, ownerId)) {
             throw new ResourceNotFoundException("WorkoutSet", "id", id);
         }
         workoutSetRepository.deleteById(id);
@@ -338,7 +357,7 @@ public class WorkoutServiceImpl implements WorkoutService {
             TrainingSessionTemplate fullTemplate = templateRepository.findByIdOrderByDisplayOrder(templateId)
                     .orElseThrow(() -> new ResourceNotFoundException("TrainingSessionTemplate", "id", templateId));
             workoutSession.setTrainingSessionTemplate(fullTemplate);
-            resolvedWeights = prescribedWeightResolver.resolveAll(fullTemplate.getTrainingSets(), 1L);
+            resolvedWeights = prescribedWeightResolver.resolveAll(fullTemplate.getTrainingSets(), workoutSession.getOwner().getId());
         }
 
         if( workoutSession.getEntries().isEmpty()){
@@ -363,7 +382,8 @@ public class WorkoutServiceImpl implements WorkoutService {
 
     @Override
     public LastExerciseResponse findLastSetByExerciseId(Long exerciseId) {
-        WorkoutSet lastSet = workoutSetRepository.findLatestForExercise(exerciseId, PageRequest.of(0, 1))
+        Long ownerId = currentUserProvider.currentUserId();
+        WorkoutSet lastSet = workoutSetRepository.findLatestForExercise(exerciseId, ownerId, PageRequest.of(0, 1))
                 .stream().findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("WorkoutSet", "exerciseId", exerciseId));
 
