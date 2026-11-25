@@ -51,6 +51,7 @@ public class SpringSecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         SecretKey secretKey = key(jwtSecret);
         return http.authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/swagger-ui/**","/v3/api-docs/**","/swagger-ui.html").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/users/register").permitAll()
                 .anyRequest().authenticated())
