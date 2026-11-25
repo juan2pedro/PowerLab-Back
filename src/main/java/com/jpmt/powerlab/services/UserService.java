@@ -12,6 +12,12 @@ public interface UserService {
 
     Optional<UserResponse> saveUser(RegisterRequest user);
 
+    /** Datos del usuario autenticado (incluye el flag coach). */
+    UserResponse me();
+
+    /** Activa la capacidad de coach para el usuario actual. Requiere re-login para refrescar el token. */
+    UserResponse enableCoach();
+
     Boolean  existByEmail(String email);
 
     Boolean  existByUsername(String username);

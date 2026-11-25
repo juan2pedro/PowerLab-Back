@@ -16,9 +16,7 @@ public record MetricsQuery(
         List<Long> exerciseIds,
         List<MainPattern> patterns
 ) {
-    public static final long DEFAULT_ATHLETE_ID = 1L;
-
-    public static MetricsQuery normalized(LocalDate from, LocalDate to, MetricsPeriod period,
+    public static MetricsQuery normalized(Long athleteId, LocalDate from, LocalDate to, MetricsPeriod period,
                                            MetricsGroupBy groupBy, SetFilter setFilter,
                                            List<Long> exerciseIds, List<MainPattern> patterns) {
         boolean hasExerciseIds = exerciseIds != null && !exerciseIds.isEmpty();
@@ -34,7 +32,7 @@ public record MetricsQuery(
         }
 
         return new MetricsQuery(
-                DEFAULT_ATHLETE_ID,
+                athleteId,
                 resolvedFrom,
                 resolvedTo,
                 period != null ? period : MetricsPeriod.WEEK,

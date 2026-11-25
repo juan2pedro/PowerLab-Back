@@ -8,6 +8,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import static jakarta.persistence.FetchType.LAZY;
+
 @Entity
 @Table(name = "workout_session")
 @Getter
@@ -25,7 +27,7 @@ public class WorkoutSession {
     @Column(name = "session_date", nullable = false)
     private LocalDate date;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "training_session_template_id")
     private TrainingSessionTemplate trainingSessionTemplate;
 
@@ -37,5 +39,9 @@ public class WorkoutSession {
     @OrderBy("displayOrder ASC")
     @Builder.Default
     private List<WorkoutEntry> entries = new ArrayList<>();
+
+    @ManyToOne(fetch = LAZY)
+    @JoinColumn(name="owner_id", nullable=false)
+    private User owner;
 
 }

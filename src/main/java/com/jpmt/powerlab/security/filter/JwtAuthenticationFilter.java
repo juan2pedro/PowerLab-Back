@@ -14,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
@@ -23,9 +24,11 @@ import static com.jpmt.powerlab.security.TokenJwtToken.*;
 
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
     private final AuthenticationManager authenticationManager;
+    private final SecretKey secretKey;
 
-    public JwtAuthenticationFilter(AuthenticationManager authenticationManager) {
+    public JwtAuthenticationFilter(AuthenticationManager authenticationManager, SecretKey secretKey) {
         this.authenticationManager = authenticationManager;
+        this.secretKey = secretKey;
     }
 
 
@@ -66,7 +69,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                 .claim("authorities", new ObjectMapper().writeValueAsString(authResult.getAuthorities()))
                 .expiration(new Date(System.currentTimeMillis() + 864_000_000))
                 .issuedAt(new Date())
-                .signWith(SECRET_KEY)
+                .signWith(secretKey)
                 .compact();
 
         response.setHeader(HEADER_AUTHORIZATION, PREFIX_TOKEN + token);

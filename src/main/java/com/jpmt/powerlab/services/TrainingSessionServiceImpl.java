@@ -19,6 +19,7 @@ import com.jpmt.powerlab.repositories.BlockRepository;
 import com.jpmt.powerlab.repositories.ExerciseRepository;
 import com.jpmt.powerlab.repositories.TrainingSessionTemplateRepository;
 import com.jpmt.powerlab.repositories.TrainingSetTemplateRepository;
+import com.jpmt.powerlab.security.CurrentUserProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,8 +41,9 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     private final TrainingSetTemplateMapper setMapper;
     private final PrescribedWeightResolver prescribedWeightResolver;
     private final BlockRepository blockRepository;
+    private final CurrentUserProvider currentUserProvider;
 
-    public TrainingSessionServiceImpl(TrainingSessionTemplateRepository sessionRepository, TrainingSetTemplateRepository setRepository, ExerciseRepository exerciseRepository, TrainingSessionTemplateMapper sessionMapper, TrainingSetTemplateMapper setMapper, PrescribedWeightResolver prescribedWeightResolver, BlockRepository blockRepository) {
+    public TrainingSessionServiceImpl(TrainingSessionTemplateRepository sessionRepository, TrainingSetTemplateRepository setRepository, ExerciseRepository exerciseRepository, TrainingSessionTemplateMapper sessionMapper, TrainingSetTemplateMapper setMapper, PrescribedWeightResolver prescribedWeightResolver, BlockRepository blockRepository, CurrentUserProvider currentUserProvider) {
         this.sessionRepository = sessionRepository;
         this.setRepository = setRepository;
         this.exerciseRepository = exerciseRepository;
@@ -49,12 +51,21 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
         this.setMapper = setMapper;
         this.prescribedWeightResolver = prescribedWeightResolver;
         this.blockRepository = blockRepository;
+        this.currentUserProvider = currentUserProvider;
+    }
+
+    /** El dueno de una plantilla se deriva de su bloque: template.block.owner. */
+    private void assertSetOwned(TrainingSetTemplate set) {
+        Long ownerId = currentUserProvider.currentUserId();
+        if (!set.getSessionTemplate().getBlock().getOwner().getId().equals(ownerId)) {
+            throw new ResourceNotFoundException("TrainingSetTemplate", "id", set.getId());
+        }
     }
 
     @Transactional(readOnly = true)
     @Override
     public List<TrainingSessionTemplateSummaryResponse> findAllSession() {
-        List<TrainingSessionTemplate> entities = sessionRepository.findAll();
+        List<TrainingSessionTemplate> entities = sessionRepository.findAllByOwnerId(currentUserProvider.currentUserId());
         return entities.stream().map(sessionMapper::toSummaryResponse).toList();
     }
 
@@ -62,7 +73,8 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     @Transactional(readOnly = true)
     @Override
     public List<TrainingSessionTemplateSummaryResponse> findAllSessionByBlockIdAndWeekNumber(Long blockId, Integer weekNumber) {
-        List<TrainingSessionTemplate> entities = sessionRepository.findByBlock_IdAndWeekNumberOrderByDayIndexAsc(blockId, weekNumber);
+        List<TrainingSessionTemplate> entities = sessionRepository.findByBlock_IdAndWeekNumberAndBlock_Owner_IdOrderByDayIndexAsc(
+                blockId, weekNumber, currentUserProvider.currentUserId());
         return entities.stream().map(sessionMapper::toSummaryResponse).toList();
     }
 
@@ -70,7 +82,7 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     @Override
     public TrainingSessionTemplateDetailResponse saveSession(TrainingSessionTemplateRequest request) {
 
-        Block block = blockRepository.findById(request.blockId())
+        Block block = blockRepository.findByIdAndOwner_Id(request.blockId(), currentUserProvider.currentUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("Block", "id", request.blockId()));
         TrainingSessionTemplate entity = sessionMapper.toEntity(request);
         entity.setBlock(block);
@@ -81,9 +93,10 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     @Override
     @Transactional
     public TrainingSessionTemplateDetailResponse updateSession(Long id, TrainingSessionTemplateRequest request) {
-        Block block = blockRepository.findById(request.blockId())
+        Long ownerId = currentUserProvider.currentUserId();
+        Block block = blockRepository.findByIdAndOwner_Id(request.blockId(), ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Block", "id", request.blockId()));
-        TrainingSessionTemplate entity = sessionRepository.findById(id)
+        TrainingSessionTemplate entity = sessionRepository.findByIdAndOwnerOrderByDisplayOrder(id, ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException(TSESSIONT, "id", id));
         entity.setBlock(block);
         sessionMapper.updateEntityFromRequest(request, entity);
@@ -94,7 +107,7 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     @Transactional
     @Override
     public void deleteSessionById(Long id) {
-        if (!sessionRepository.existsById(id)) {
+        if (!sessionRepository.existsByIdAndBlock_Owner_Id(id, currentUserProvider.currentUserId())) {
             throw new ResourceNotFoundException(TSESSIONT, "id", id);
         }
         sessionRepository.deleteById(id);
@@ -103,10 +116,11 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     @Transactional(readOnly = true)
     @Override
     public TrainingSessionTemplateDetailResponse findSessionById(Long id) {
-        TrainingSessionTemplate entity = sessionRepository.findByIdOrderByDisplayOrder(id)
+        Long ownerId = currentUserProvider.currentUserId();
+        TrainingSessionTemplate entity = sessionRepository.findByIdAndOwnerOrderByDisplayOrder(id, ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException(TSESSIONT, "id", id));
 
-        return sessionMapper.toDetailResponse(entity, prescribedWeightResolver.resolveAll(entity.getTrainingSets(), 1L));
+        return sessionMapper.toDetailResponse(entity, prescribedWeightResolver.resolveAll(entity.getTrainingSets(), ownerId));
     }
 
     @Transactional
@@ -119,7 +133,7 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
                 && request.targetRepsMin() > request.targetRepsMax()) {
             throw new BadRequestException("targetRepsMin cannot be greater than targetRepsMax");
         }
-        TrainingSessionTemplate session = sessionRepository.findById(sessionId)
+        TrainingSessionTemplate session = sessionRepository.findByIdAndOwnerOrderByDisplayOrder(sessionId, currentUserProvider.currentUserId())
                 .orElseThrow(() -> new ResourceNotFoundException(TSESSIONT, "id", sessionId));
 
             Exercise exercise = exerciseRepository.findById(request.exerciseId())
@@ -147,6 +161,7 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     public TrainingSetTemplateResponse updateSet(Long id, TrainingSetTemplateUpdateRequest request) {
         TrainingSetTemplate entity = setRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("TrainingSetTemplate", "id", id));
+        assertSetOwned(entity);
 
         setMapper.updateEntityFromRequest(request, entity);
 
@@ -166,9 +181,9 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     @Transactional
     @Override
     public void deleteSetById(Long id) {
-        if (!setRepository.existsById(id)) {
-            throw new ResourceNotFoundException("TrainingSetTemplate", "id", id);
-        }
+        TrainingSetTemplate entity = setRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("TrainingSetTemplate", "id", id));
+        assertSetOwned(entity);
         setRepository.deleteById(id);
     }
 
@@ -177,13 +192,14 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     public TrainingSetTemplateResponse findSetById(Long id) {
         TrainingSetTemplate entity = setRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("TrainingSetTemplate", "id", id));
+        assertSetOwned(entity);
         return setMapper.toResponse(entity);
     }
 
     @Transactional(readOnly = true)
     @Override
     public List<TrainingSetTemplateResponse> findBySessionIdWithExercise(Long sessionId) {
-        TrainingSessionTemplate session = sessionRepository.findByIdOrderByDisplayOrder(sessionId)
+        TrainingSessionTemplate session = sessionRepository.findByIdAndOwnerOrderByDisplayOrder(sessionId, currentUserProvider.currentUserId())
                 .orElseThrow(() -> new ResourceNotFoundException(TSESSIONT, "id", sessionId));
 
         return session.getTrainingSets().stream()
@@ -194,6 +210,9 @@ public class TrainingSessionServiceImpl implements TrainingSessionService {
     @Transactional
     @Override
     public void reorderSets(Long sessionId, List<SetOrderRequest> order) {
+        if (!sessionRepository.existsByIdAndBlock_Owner_Id(sessionId, currentUserProvider.currentUserId())) {
+            throw new ResourceNotFoundException(TSESSIONT, "id", sessionId);
+        }
         Map<Long, Integer> byId = order.stream()
                 .collect(toMap(SetOrderRequest::id, SetOrderRequest::displayOrder));
 

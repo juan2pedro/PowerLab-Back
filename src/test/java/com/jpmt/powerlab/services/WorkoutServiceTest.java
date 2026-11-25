@@ -11,6 +11,8 @@ import com.jpmt.powerlab.models.mappers.WorkoutEntryMapper;
 import com.jpmt.powerlab.models.mappers.WorkoutSessionMapper;
 import com.jpmt.powerlab.models.mappers.WorkoutSetMapper;
 import com.jpmt.powerlab.repositories.*;
+import com.jpmt.powerlab.security.CurrentUserProvider;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,6 +27,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -48,9 +51,19 @@ class WorkoutServiceTest {
     private WorkoutSetMapper workoutSetMapper;
     @Mock
     private PrescribedWeightResolver prescribedWeightResolver;
+    @Mock
+    private CurrentUserProvider currentUserProvider;
 
     @InjectMocks
     private WorkoutServiceImpl workoutService;
+
+    private static final Long OWNER_ID = 1L;
+
+    @BeforeEach
+    void setUpCurrentUser() {
+        lenient().when(currentUserProvider.currentUserId()).thenReturn(OWNER_ID);
+        lenient().when(currentUserProvider.currentUser()).thenReturn(User.builder().id(OWNER_ID).build());
+    }
 
     @Test
     void saveWorkoutSessionWithOutTemplate() {
@@ -148,7 +161,7 @@ class WorkoutServiceTest {
         when(workoutSessionMapper.toSummaryResponse(sessions.get(1)))
                 .thenReturn(new WorkoutSessionSummaryResponse(2L, LocalDate.now().minusDays(10), 1L, Status.IN_PROGRESS, java.util.Collections.emptyList()));
 
-        when(workoutSessionRepository.findFullByDateRange(from, to)).thenReturn(sessions);
+        when(workoutSessionRepository.findFullByDateRange(from, to, OWNER_ID)).thenReturn(sessions);
         List<WorkoutSessionSummaryResponse> result = workoutService.findAllWorkoutSessionsByDateRange(from, to);
 
         assertEquals(2, result.size());
@@ -159,9 +172,9 @@ class WorkoutServiceTest {
     void findFullDayByDateWithoutEntries() {
         List<TrainingSetTemplate> setTemplate = Collections.singletonList(TrainingSetTemplate.builder().id(1L).targetSets(5).targetRepsMin(12).targetWeight(100.0).targetIntensityMax(80.00).targetIntensityType(IntensityType.PERCENTAGE_1RM).rest("2 min").notes("set notes").displayOrder(1).build());
         BlockResponse block = new BlockResponse(1L, "block name", null, null);
-        TrainingSessionTemplate template = TrainingSessionTemplate.builder().id(1L).block(new Block(1L, "block name", null, null)).weekNumber(1).dayIndex(1).conjugatedDayType(ConjugatedDayType.ME_LOWER).notes("notess").trainingSets(setTemplate).build();
+        TrainingSessionTemplate template = TrainingSessionTemplate.builder().id(1L).block(Block.builder().id(1L).name("block name").build()).weekNumber(1).dayIndex(1).conjugatedDayType(ConjugatedDayType.ME_LOWER).notes("notess").trainingSets(setTemplate).build();
         List<WorkoutEntry> entries = Collections.emptyList();
-        WorkoutSession workoutSession = WorkoutSession.builder().id(1L).date(LocalDate.now()).trainingSessionTemplate(template).entries(entries).build();
+        WorkoutSession workoutSession = WorkoutSession.builder().id(1L).date(LocalDate.now()).trainingSessionTemplate(template).entries(entries).owner(User.builder().id(OWNER_ID).build()).build();
 
         WorkoutDayResponse.TemplateInfo templateInfo = new WorkoutDayResponse.TemplateInfo(
                 1L,
@@ -181,7 +194,7 @@ class WorkoutServiceTest {
                 Collections.emptyList()
         );
 
-        when(workoutSessionRepository.findFullByDate(LocalDate.now())).thenReturn(Collections.singletonList(workoutSession));
+        when(workoutSessionRepository.findFullByDate(LocalDate.now(), OWNER_ID)).thenReturn(Collections.singletonList(workoutSession));
         when(templateRepository.findByIdOrderByDisplayOrder(1L)).thenReturn(Optional.of(template));
         when(workoutSessionMapper.toDayResponse(eq(workoutSession), any())).thenReturn(expectedResponse);
 
@@ -196,11 +209,11 @@ class WorkoutServiceTest {
     @Test
     void findFullDayByDate() {
         List<TrainingSetTemplate> setTemplate = Collections.singletonList(TrainingSetTemplate.builder().id(1L).targetSets(5).targetRepsMin(12).targetWeight(100.0).targetIntensityMax(80.00).targetIntensityType(IntensityType.PERCENTAGE_1RM).rest("2 min").notes("set notes").displayOrder(1).build());
-        Block block = new Block(1L, "block name", "notas", null);
+        Block block = Block.builder().id(1L).name("block name").notes("notas").build();
         BlockResponse expectedBlock = new BlockResponse(1L, "block name", "notas", null);
         TrainingSessionTemplate template = TrainingSessionTemplate.builder().id(1L).block(block).weekNumber(1).dayIndex(1).conjugatedDayType(ConjugatedDayType.ME_LOWER).notes("notess").trainingSets(setTemplate).build();
         List<WorkoutEntry> entries = Collections.singletonList(WorkoutEntry.builder().id(1L).notes("entry notes").build());
-        WorkoutSession workoutSession = WorkoutSession.builder().id(1L).date(LocalDate.now()).trainingSessionTemplate(template).entries(entries).build();
+        WorkoutSession workoutSession = WorkoutSession.builder().id(1L).date(LocalDate.now()).trainingSessionTemplate(template).entries(entries).owner(User.builder().id(OWNER_ID).build()).build();
 
         WorkoutDayResponse.TemplateInfo templateInfo = new WorkoutDayResponse.TemplateInfo(
                 1L,
@@ -220,7 +233,7 @@ class WorkoutServiceTest {
                 entry
         );
 
-        when(workoutSessionRepository.findFullByDate(LocalDate.now())).thenReturn(Collections.singletonList(workoutSession));
+        when(workoutSessionRepository.findFullByDate(LocalDate.now(), OWNER_ID)).thenReturn(Collections.singletonList(workoutSession));
         when(templateRepository.findByIdOrderByDisplayOrder(1L)).thenReturn(Optional.of(template));
         when(workoutSetRepository.findByWorkoutEntryIdIn(List.of(1L))).thenReturn(Collections.emptyList());
         when(workoutSessionMapper.toDayResponse(eq(workoutSession), any())).thenReturn(expectedResponse);
@@ -269,9 +282,9 @@ class WorkoutServiceTest {
         TrainingSessionTemplate template = TrainingSessionTemplate.builder().id(1L).block(block).weekNumber(1).dayIndex(1).conjugatedDayType(ConjugatedDayType.ME_LOWER).notes("notess").trainingSets(setTemplate).build();
         List<WorkoutEntry> entries = Collections.emptyList();
         LocalDate today = LocalDate.now();
-        WorkoutSession workoutSession = WorkoutSession.builder().id(1L).date(today).trainingSessionTemplate(template).entries(entries).build();
+        WorkoutSession workoutSession = WorkoutSession.builder().id(1L).date(today).trainingSessionTemplate(template).entries(entries).owner(User.builder().id(OWNER_ID).build()).build();
 
-        when(workoutSessionRepository.findFullByDate(today)).thenReturn(Collections.singletonList(workoutSession));
+        when(workoutSessionRepository.findFullByDate(today, OWNER_ID)).thenReturn(Collections.singletonList(workoutSession));
         when(templateRepository.findByIdOrderByDisplayOrder(1L)).thenReturn(Optional.empty());
 
         Optional<WorkoutDayResponse> found = workoutService.findFullDayByDate(today);

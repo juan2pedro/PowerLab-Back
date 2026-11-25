@@ -5,6 +5,7 @@ import com.jpmt.powerlab.models.dto.user.RegisterRequest;
 import com.jpmt.powerlab.models.dto.user.UserResponse;
 import com.jpmt.powerlab.models.mappers.UserMapper;
 import com.jpmt.powerlab.repositories.UserRepository;
+import com.jpmt.powerlab.security.CurrentUserProvider;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,11 +19,13 @@ public class UserServiceImpl implements  UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private  final UserMapper userMapper;
+    private final CurrentUserProvider currentUser;
 
-    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, UserMapper userMapper) {
+    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, UserMapper userMapper, CurrentUserProvider currentUser) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userMapper = userMapper;
+        this.currentUser = currentUser;
     }
 
 
@@ -40,6 +43,20 @@ public class UserServiceImpl implements  UserService {
        Optional< User> savedUserOptional = Optional.of(userRepository.save(userEntity));
         User savedUser = savedUserOptional.orElseThrow(() -> new RuntimeException("Failed to save user"));
        return Optional.ofNullable(userMapper.toResponse(savedUser));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserResponse me() {
+        return userMapper.toResponse(currentUser.currentUser());
+    }
+
+    @Override
+    @Transactional
+    public UserResponse enableCoach() {
+        User user = currentUser.currentUser();
+        user.setCoach(true);
+        return userMapper.toResponse(userRepository.save(user));
     }
 
     @Transactional(readOnly = true)

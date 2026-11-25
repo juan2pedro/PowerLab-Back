@@ -12,6 +12,7 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 
 
 public interface WorkoutSetRepository extends JpaRepository<WorkoutSet, Long> {
@@ -21,9 +22,12 @@ public interface WorkoutSetRepository extends JpaRepository<WorkoutSet, Long> {
     @Query("""
     select ws from WorkoutSet ws
     where ws.workoutEntry.exercise.id = :exerciseId
+      and ws.workoutEntry.session.owner.id = :ownerId
     order by ws.workoutEntry.session.date desc, ws.weight desc
 """)
-    List<WorkoutSet> findLatestForExercise(@Param("exerciseId") Long exerciseId, Pageable pageable);
+    List<WorkoutSet> findLatestForExercise(@Param("exerciseId") Long exerciseId,
+                                           @Param("ownerId") Long ownerId,
+                                           Pageable pageable);
 
     /**
      * Despacha a una de las 3 queries de abajo según los filtros presentes. Evita el patrón
@@ -32,19 +36,20 @@ public interface WorkoutSetRepository extends JpaRepository<WorkoutSet, Long> {
     default List<WorkoutSet> findForMetrics(LocalDate from, LocalDate to,
                                              List<Long> exerciseIds,
                                              List<MainPattern> patterns,
-                                             Collection<SetType> setTypes) {
+                                             Collection<SetType> setTypes,
+                                             Long ownerId) {
         Collection<SetType> types = (setTypes == null || setTypes.isEmpty())
                 ? EnumSet.allOf(SetType.class)
                 : setTypes;
         boolean byExercise = exerciseIds != null && !exerciseIds.isEmpty();
         boolean byPattern = patterns != null && !patterns.isEmpty();
         if (byExercise) {
-            return findForMetricsByExercises(from, to, exerciseIds, types);
+            return findForMetricsByExercises(from, to, exerciseIds, types, ownerId);
         }
         if (byPattern) {
-            return findForMetricsByPatterns(from, to, patterns, types);
+            return findForMetricsByPatterns(from, to, patterns, types, ownerId);
         }
-        return findForMetricsAll(from, to, types);
+        return findForMetricsAll(from, to, types, ownerId);
     }
 
     @Query("""
@@ -54,6 +59,7 @@ public interface WorkoutSetRepository extends JpaRepository<WorkoutSet, Long> {
     JOIN FETCH we.session s
     LEFT JOIN FETCH s.trainingSessionTemplate t
     WHERE s.date BETWEEN :from AND :to
+      AND s.owner.id = :ownerId
       AND e.id IN :exerciseIds
       AND ws.type IN :setTypes
     ORDER BY s.date, we.displayOrder, ws.sequenceNumber
@@ -61,7 +67,8 @@ public interface WorkoutSetRepository extends JpaRepository<WorkoutSet, Long> {
     List<WorkoutSet> findForMetricsByExercises(@Param("from") LocalDate from,
                                                 @Param("to") LocalDate to,
                                                 @Param("exerciseIds") List<Long> exerciseIds,
-                                                @Param("setTypes") Collection<SetType> setTypes);
+                                                @Param("setTypes") Collection<SetType> setTypes,
+                                                @Param("ownerId") Long ownerId);
 
     @Query("""
     SELECT ws FROM WorkoutSet ws
@@ -70,6 +77,7 @@ public interface WorkoutSetRepository extends JpaRepository<WorkoutSet, Long> {
     JOIN FETCH we.session s
     LEFT JOIN FETCH s.trainingSessionTemplate t
     WHERE s.date BETWEEN :from AND :to
+      AND s.owner.id = :ownerId
       AND e.mainPattern IN :patterns
       AND ws.type IN :setTypes
     ORDER BY s.date, we.displayOrder, ws.sequenceNumber
@@ -77,7 +85,8 @@ public interface WorkoutSetRepository extends JpaRepository<WorkoutSet, Long> {
     List<WorkoutSet> findForMetricsByPatterns(@Param("from") LocalDate from,
                                                @Param("to") LocalDate to,
                                                @Param("patterns") List<MainPattern> patterns,
-                                               @Param("setTypes") Collection<SetType> setTypes);
+                                               @Param("setTypes") Collection<SetType> setTypes,
+                                               @Param("ownerId") Long ownerId);
 
     @Query("""
     SELECT ws FROM WorkoutSet ws
@@ -86,10 +95,17 @@ public interface WorkoutSetRepository extends JpaRepository<WorkoutSet, Long> {
     JOIN FETCH we.session s
     LEFT JOIN FETCH s.trainingSessionTemplate t
     WHERE s.date BETWEEN :from AND :to
+      AND s.owner.id = :ownerId
       AND ws.type IN :setTypes
     ORDER BY s.date, we.displayOrder, ws.sequenceNumber
     """)
     List<WorkoutSet> findForMetricsAll(@Param("from") LocalDate from,
                                         @Param("to") LocalDate to,
-                                        @Param("setTypes") Collection<SetType> setTypes);
+                                        @Param("setTypes") Collection<SetType> setTypes,
+                                        @Param("ownerId") Long ownerId);
+
+    // WorkoutSet no tiene dueno propio: se deriva via workoutEntry.session.owner.
+    Optional <WorkoutSet> findByIdAndWorkoutEntry_Session_Owner_Id(Long id, Long ownerId);
+
+    boolean existsByIdAndWorkoutEntry_Session_Owner_Id(Long id, Long ownerId);
 }

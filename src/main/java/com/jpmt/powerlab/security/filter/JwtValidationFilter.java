@@ -16,6 +16,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
+import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -25,8 +26,11 @@ import java.util.Map;
 import static com.jpmt.powerlab.security.TokenJwtToken.*;
 
 public class JwtValidationFilter extends BasicAuthenticationFilter {
-    public JwtValidationFilter(AuthenticationManager authenticationManager) {
+    private final SecretKey secretKey;
+
+    public JwtValidationFilter(AuthenticationManager authenticationManager, SecretKey secretKey) {
         super(authenticationManager);
+        this.secretKey = secretKey;
     }
 
     @Override
@@ -39,7 +43,7 @@ public class JwtValidationFilter extends BasicAuthenticationFilter {
         String token = header.replace(PREFIX_TOKEN, "");
 
         try {
-            Claims claims = Jwts.parser().verifyWith(SECRET_KEY).build().parseSignedClaims(token).getPayload();
+            Claims claims = Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload();
             String userId = claims.getSubject();
             Object authoritiesClaims = claims.get("authorities");
 

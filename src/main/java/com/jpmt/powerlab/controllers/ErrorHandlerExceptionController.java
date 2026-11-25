@@ -1,6 +1,7 @@
 package com.jpmt.powerlab.controllers;
 
 import com.jpmt.powerlab.exceptions.BadRequestException;
+import com.jpmt.powerlab.exceptions.ForbiddenException;
 import com.jpmt.powerlab.exceptions.ResourceNotFoundException;
 import com.jpmt.powerlab.models.dto.ApiErrorResponse;
 import jakarta.validation.ConstraintViolationException;
@@ -11,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -75,6 +77,34 @@ public class ErrorHandlerExceptionController {
                 new Date()
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiError);
+    }
+
+    // Cubre AuthorizationDeniedException de @PreAuthorize (extiende AccessDeniedException).
+    // Sin esto, el handler generico la convertia en 500.
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiErrorResponse> handleAccessDenied(AccessDeniedException ex) {
+        logger.warn("Access denied: {}", ex.getMessage());
+        ApiErrorResponse apiError = new ApiErrorResponse(
+                null,
+                "No tienes permisos para esta accion. Si acabas de cambiar tu rol (p.ej. activar coach), vuelve a iniciar sesion.",
+                "Forbidden",
+                HttpStatus.FORBIDDEN.value(),
+                new Date()
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(apiError);
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ApiErrorResponse> handleForbiddenException(ForbiddenException ex) {
+        logger.warn("Forbidden: {}", ex.getMessage());
+        ApiErrorResponse apiError = new ApiErrorResponse(
+                null,
+                ex.getMessage(),
+                "Forbidden",
+                HttpStatus.FORBIDDEN.value(),
+                new Date()
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(apiError);
     }
 
     @ExceptionHandler(Exception.class)

@@ -21,7 +21,7 @@ public interface MetricsService {
      * Los intentos fallados (RPE &gt; 10) no cuentan como récord: se devuelven aparte.
      * Sin filtros, resuelve los tres levantamientos de competición del atleta.
      */
-    PersonalRecordsResponse personalRecords(LocalDate from, LocalDate to,
+    PersonalRecordsResponse personalRecords(Long athleteId, LocalDate from, LocalDate to,
                                              List<Long> exerciseIds, List<MainPattern> patterns);
 
     /**
@@ -30,5 +30,5 @@ public interface MetricsService {
      * El total real suma los RM reales (mejor single conseguido) de los tres movimientos, y es
      * null mientras falte alguno; DOTS e IPF GL lo siguen.
      */
-    MetricsSummaryResponse summary(LocalDate adherenceFrom, LocalDate adherenceTo);
+    MetricsSummaryResponse summary(Long athleteId, LocalDate adherenceFrom, LocalDate adherenceTo);
 }

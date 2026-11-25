@@ -2,10 +2,12 @@ package com.jpmt.powerlab.security;
 
 import com.jpmt.powerlab.security.filter.JwtAuthenticationFilter;
 import com.jpmt.powerlab.security.filter.JwtValidationFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -15,14 +17,24 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
+import javax.crypto.SecretKey;
+
+import static com.jpmt.powerlab.security.TokenJwtToken.key;
+
 @Configuration
 @EnableMethodSecurity
 public class SpringSecurityConfig {
 
     private final AuthenticationConfiguration authenticationConfiguration;
+    private final RestAuthenticationEntryPoint authenticationEntryPoint;
 
-    public SpringSecurityConfig(AuthenticationConfiguration authenticationConfiguration) {
+    @Value("${jwt.secret}")
+    private String jwtSecret;
+
+    public SpringSecurityConfig(AuthenticationConfiguration authenticationConfiguration,
+                                RestAuthenticationEntryPoint authenticationEntryPoint) {
         this.authenticationConfiguration = authenticationConfiguration;
+        this.authenticationEntryPoint = authenticationEntryPoint;
     }
 
     @Bean
@@ -37,13 +49,16 @@ public class SpringSecurityConfig {
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        SecretKey secretKey = key(jwtSecret);
         return http.authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.GET, "/swagger-ui/**","/v3/api-docs/**","/swagger-ui.html").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/users/register").permitAll()
                 .anyRequest().authenticated())
-                .addFilter(new JwtAuthenticationFilter(authenticationManager()))
-                .addFilter(new JwtValidationFilter(authenticationManager()))
+                .addFilter(new JwtAuthenticationFilter(authenticationManager(), secretKey))
+                .addFilter(new JwtValidationFilter(authenticationManager(), secretKey))
+                .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .build();
     }

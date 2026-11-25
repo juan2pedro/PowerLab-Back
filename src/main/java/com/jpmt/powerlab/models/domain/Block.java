@@ -23,6 +23,10 @@ public class Block {
 
     private String notes;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id", nullable = false)
+    private User owner;
+
     private OffsetDateTime createdAt;
 
     @PrePersist

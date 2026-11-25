@@ -30,4 +30,14 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.saveUser(user).orElseThrow(() -> new RuntimeException("Failed to register user")));
     }
 
+    @GetMapping("/me")
+    public UserResponse me() {
+        return userService.me();
+    }
+
+    @PostMapping("/me/coach")
+    public UserResponse enableCoach() {
+        return userService.enableCoach();
+    }
+
 }
