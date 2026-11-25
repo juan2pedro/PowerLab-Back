@@ -57,7 +57,10 @@ public class SpringSecurityConfig {
                 .addFilter(new JwtAuthenticationFilter(authenticationManager(), secretKey))
                 .addFilter(new JwtValidationFilter(authenticationManager(), secretKey))
                 .cors(Customizer.withDefaults())
-                .csrf(Customizer.withDefaults())
+                // CSRF deshabilitado a proposito: API stateless con JWT en cabecera Authorization
+                // (sin cookies de sesion) => CSRF no aplica. Reactivarlo (Customizer.withDefaults)
+                // rompe todos los POST/PUT/DELETE con 403. El hallazgo de CodeQL es falso positivo aqui.
+                .csrf(AbstractHttpConfigurer::disable)
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .build();
